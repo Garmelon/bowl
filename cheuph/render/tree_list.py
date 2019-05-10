@@ -1,3 +1,6 @@
+import collections
+from typing import Deque, List
+
 from .element import Id, RenderedElement
 
 __all__ = ["TreeList"]
@@ -7,9 +10,7 @@ class TreeList:
             tree: List[RenderedElement],
             anchor_id: Id,
             ) -> None:
-        self._deque = collections.deque()
-
-        self._anchor_id = anchor_id
+        self._deque: Deque = collections.deque()
 
         # The offsets can be thought of as the index of a line relative to the
         # anchor's first line.
@@ -19,8 +20,8 @@ class TreeList:
         #
         # The lower offset is the index of the lowermost message's LAST line.
         # lower_offset >= 0.
-        self._upper_offset: Int
-        self._lower_offset: Int
+        self._upper_offset: int
+        self._lower_offset: int
 
         # The upper and lower tree ids are the ids of the uppermost or
         # lowermost tree added to the TreeList. They can be used to request the
@@ -28,14 +29,14 @@ class TreeList:
         self._upper_tree_id: Id
         self._lower_tree_id: Id
 
-        self._add_first_tree(tree)
+        self._add_first_tree(tree, anchor_id)
 
     @property
-    def upper_offset(self) -> Int:
+    def upper_offset(self) -> int:
         return self._upper_offset
 
     @property
-    def lower_offset(self) -> Int:
+    def lower_offset(self) -> int:
         return self._lower_offset
 
     @property
@@ -46,7 +47,10 @@ class TreeList:
     def lower_tree_id(self) -> Id:
         return self._lower_tree_id
 
-    def _add_first_tree(self, tree: List[RenderedElement]) -> None:
+    def _add_first_tree(self,
+            tree: List[RenderedElement],
+            anchor_id: Id
+            ) -> None:
         if len(tree) == 0:
             raise ValueError("The tree must contain at least one element")
 
@@ -57,7 +61,7 @@ class TreeList:
         offset = 0
         found_anchor = False
 
-        for rendered in elements:
+        for rendered in tree:
             if rendered.element.id == anchor_id:
                 found_anchor = True
                 self._upper_offset = -offset

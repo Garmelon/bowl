@@ -1,7 +1,8 @@
 import collections
-from typing import Any, Deque, Optional, Set
+from typing import Any, List, Optional, Set
 
-from .element import ElementSupply, Id, RenderedElement
+from .element import Element, ElementSupply, Id, RenderedElement
+from .tree_list import TreeList
 
 __all__ = ["TreeDisplay"]
 
@@ -23,15 +24,15 @@ class TreeDisplay:
 
         # Object references
         self._supply = supply
-        self._rendered: Optional[TreeList]
+        self._rendered: Optional[TreeList] = None
         self._folded: Set[Id] = set()
 
-    def resize(self, width: int, height: int):
+    def resize(self, width: int, height: int) -> None:
         # TODO maybe empty _rendered/invalidate caches etc.?
         self._width = width
         self._height = height
 
-    def render(self):
+    def render(self) -> None:
         # Steps:
         #
         # 1. Find and render anchor's branch to TreeList
@@ -67,7 +68,10 @@ class TreeDisplay:
             self._fill_screen_upwards()
             self._fill_screen_downwards()
 
-    def _render_tree(self, tree: Element, depth=0):
+    def _render_tree(self,
+            tree: Element,
+            depth: int = 0
+            ) -> List[RenderedElement]:
         elements: List[RenderedElement] = []
 
         highlighted = tree.id == self._cursor_id
@@ -82,7 +86,10 @@ class TreeDisplay:
 
         return elements
 
-    def _fill_screen_upwards(self):
+    def _fill_screen_upwards(self) -> None:
+        if self._rendered is None:
+            return # TODO
+
         while True:
             if self._rendered.upper_offset <= 0:
                 break
@@ -96,10 +103,13 @@ class TreeDisplay:
             above_tree = self._supply.get_tree(above_tree_id)
             self._rendered.add_above(self._render_tree(above_tree))
 
-    def _fill_screen_downwards(self):
+    def _fill_screen_downwards(self) -> None:
         """
         Eerily similar to _fill_screen_upwards()...
         """
+
+        if self._rendered is None:
+            return # TODO
 
         while True:
             if self._rendered.lower_offset >= self._height - 1:
@@ -114,7 +124,7 @@ class TreeDisplay:
             below_tree = self._supply.get_tree(below_tree_id)
             self._rendered.add_below(self._render_tree(below_tree))
 
-    def draw_to(self, window: Any):
+    def draw_to(self, window: Any) -> None:
         pass
 
 # Terminology:

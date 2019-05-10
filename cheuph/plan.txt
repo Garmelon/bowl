@@ -1,0 +1,10 @@
+General/generic features:
+
+Text with attributes attached to the characters
+
+Can be...
+- split
+- joined
+- converted to raw text or other formats
+
+The attributes of certain characters can be read

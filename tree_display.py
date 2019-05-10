@@ -1,3 +1,15 @@
+# Element supply of some sort
+# Dict-/map-like
+# Tree structure
+# ↓
+# List of already formatted elements
+# Each with a line height, indentation, ...
+# List structure
+# ↓
+# Messages and UI elements rendered to lines
+# with meta-information, links/ids
+# List structure, but on lines, not individual messages
+
 class Element:
     pass
 
@@ -5,7 +17,120 @@ class ElementSupply:
     pass
 
 class TreeDisplay:
-    pass
+    """
+    Message line coordinates:
+
+    n - Highest message
+    ...
+    1 - Higher message
+    0 - Lowest message
+
+    Screen/line coordinates:
+
+    h-1 - First line
+    h-2 - Second line
+    ...
+    1   - Second to last line
+    0   - Last line
+
+    Terms:
+
+    <base>
+    | ...
+    | ... (above)
+    | ...
+    | <stem>
+    | | ...
+    | | | ... | <anchor>
+    | ...
+    | ... (below)
+    | ...
+
+    or
+
+    <base>
+    | ...
+    | ... (above)
+    | ...
+    | <stem and anchor>
+    | ...
+    | ... (below)
+    | ...
+
+    The stem is a child of the base. The anchor is a direct or indirect child
+    of the stem, or it is the stem itself.
+
+    The base id may also be None (the implicit parent of all top-level
+    messages in a room)
+    """
+
+    def __init__(self, window: Any) -> None:
+        self.window = window
+
+        self._anchor_id = None
+        # Position of the formatted anchor's uppermost line on the screen
+        self._anchor_screen_pos = 0
+
+
+    def render(self) -> None:
+        """
+        Intermediate structures:
+        - Upwards and downwards list of elements + focused element
+        - Upwards and downwards list of rendered elements + focused element
+        - List of visible lines (saved and used for mouse clicks etc.)
+
+        Steps of rendering:
+        1. Load all necessary elements
+        2. Render all messages with indentation
+        3. Compile lines
+
+        Steps of advanced rendering:
+        1. Load focused element + render
+        2. Load tree of focused element + render
+        3. Load trees above and below + render, as many as necessary
+        4. While loading and rendering trees, auto-collapse
+        5. Move focus if focused element was hidden in an auto-collapse
+        ...?
+        """
+
+        # Step 1: Find and render the tree the anchor is in.
+
+        stem_id = self._supply.find_stem_id(self._anchor_id,
+                base=self._base_id)
+
+        tree = self._supply.get_tree(stem_id)
+        # The render might modify self._anchor_id, if the original anchor can't
+        # be displayed.
+        self._render_tree(tree)
+
+        above, anchor, below = self._split_at_anchor(tree)
+
+        # Step 2: Add more trees above and below, until the screen can be
+        # filled or there aren't any elements left in the store.
+
+        # h_win = 7
+        # 6   | <- h_above = 3
+        # 5   |
+        # 4   |
+        # 3 |  <- anchor, self._anchor_screen_pos = 3, anchor.height = 2
+        # 2 |
+        # 1   | <- h_below = 2
+        # 0   |
+        #
+        # 7 - 3 - 1 = 3 -- correct
+        # 3 - 2 + 1 = 2 -- correct
+
+        height_window = None # TODO
+
+        # All values are converted to zero indexed values in the calculations
+        height_above = (height_window - 1) - self._anchor_screen_pos
+        height_below = self._anchor_screen_pos - (anchor.height - 1)
+
+        self._extend(above, height_above, base=self._base_id)
+        self._extend(below, height_below, base=self._base_id)
+
+        self._lines = self._render_to_lines(above, anchor, below)
+        self._update_window(self._lines)
 
 # TreeDisplay plan(s):
 #
