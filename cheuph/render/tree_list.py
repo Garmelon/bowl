@@ -47,6 +47,10 @@ class TreeList:
     def lower_tree_id(self) -> Id:
         return self._lower_tree_id
 
+    def offset_by(self, offset: int) -> None:
+        self._upper_offset += offset
+        self._lower_offset += offset
+
     def _add_first_tree(self,
             tree: List[RenderedElement],
             anchor_id: Id
