@@ -1,7 +1,8 @@
 import collections
 from typing import Any, List, Optional, Set
 
-from .element import Element, ElementSupply, Id, RenderedElement
+from .element import Element, Id, RenderedElement
+from .element_supply import ElementSupply
 from .exceptions import TreeException
 from .markup import AttributedText
 from .tree_list import TreeList
