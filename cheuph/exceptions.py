@@ -1,4 +1,7 @@
-__all__ = ["RenderException"]
+__all__ = ["ElementException", "TreeException"]
 
-class RenderException(Exception):
+class ElementException(Exception):
+    pass
+
+class TreeException(Exception):
     pass
