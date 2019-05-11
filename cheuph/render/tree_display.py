@@ -2,6 +2,7 @@ import collections
 from typing import Any, List, Optional, Set
 
 from .element import Element, ElementSupply, Id, RenderedElement
+from .exceptions import TreeException
 from .tree_list import TreeList
 
 __all__ = ["TreeDisplay"]
@@ -61,6 +62,8 @@ class TreeDisplay:
     visible on the screen, and can be used to look up mouse clicks (see the
     "id" attribute in the "RENDERING - technical details" section below).
     They're a simple format for translating between elements and onscreen text.
+    They are always as wide as the current width. Any missing characters are
+    filled with spaces.
 
     RENDERING - technical details
 
@@ -148,17 +151,134 @@ class TreeDisplay:
         self._width = width
         self._height = height
 
-        self._root_id: Optional[Id] = None
-        self._anchor_id: Optional[Id] = None
-        self._cursor_id: Optional[Id] = None
+        #self._root_id: Optional[Id] = None # TODO add root stuff
 
-        self._anchor_offset: int = 0
-        self._horizontal_offset: int = 0
+        self.anchor_id: Optional[Id] = None
+        self.anchor_offset: int = 0
+
+        self.cursor_id: Optional[Id] = None
+
+        self.horizontal_offset: int = 0
 
         # Object references
         self._supply = supply
-        self._rendered: Optional[TreeList] = None
         self._folded: Set[Id] = set()
+
+        self._rendered: Optional[TreeList] = None
+        self._display_lines: Optional[List[AttributedText]] = None
+
+    # RENDERING
+
+    @property
+    def display_lines(self) -> List[AttributedText]:
+        if self._display_lines is None:
+            raise TreeException((
+                "No display lines available (have you called"
+                " render_display_lines() yet?)"
+            ))
+
+        return self._display_lines
+
+    def rerender(self) -> None:
+        """
+        This function updates the internal TreeList (step 1).
+
+        It should be called when the ElementSupply changes or when the anchor,
+        anchor offset, cursor, width or height are manually changed.
+        """
+
+        pass # TODO
+
+    def render_display_lines(self) -> None:
+        """
+        This function updates the display lines (step 2).
+
+        It should be called just before drawing the display lines to the curses
+        window.
+        """
+
+        pass # TODO
+
+    # SCROLLING
+
+    def center_anchor(self) -> None:
+        """
+        Center the anchor vertically on the screen.
+
+        This does not render anything.
+        """
+
+        pass # TODO
+
+    def ensure_anchor_is_visible(self) -> None:
+        """
+        Scroll up or down far enough that the anchor is completely visible.
+
+        If the anchor is higher than the screen, scroll such that the first
+        line of the anchor is at the top of the screen.
+
+        This does not render anything.
+        """
+
+        pass # TODO
+
+    def anchor_center_element(self) -> None:
+        """
+        Select the element closest to the center of the screen (vertically) as
+        anchor. Set the anchor offset such that no scrolling happens.
+
+        This function updates the internal TreeList (step 1).
+        """
+
+        pass # TODO
+
+    # FOLDING
+
+    def is_folded(self, element_id: Id) -> bool:
+        """
+        Check whether an element is folded.
+
+        This does not render anything.
+        """
+
+        return element_id in self._folded
+
+    def fold(self, element_id: Id) -> None:
+        """
+        Fold an element.
+
+        This does not render anything.
+        """
+
+        self._folded.add(element_id)
+
+    def unfold(self, element_id: Id) -> None:
+        """
+        Unfold an element.
+
+        This does not render anything.
+        """
+
+        if element_id in self._folded:
+            self._folded.remove(element_id)
+
+    def toggle_fold(self, element_id: Id) -> bool:
+        """
+        Toggle whether an element is folded.
+
+        Returns whether the element is folded now.
+
+        This does not render anything.
+        """
+
+        if self.is_folded(element_id):
+            self.unfold(element_id)
+            return False
+        else:
+            self.fold(element_id)
+            return True
+
+    # OTHER STUFF
 
     def resize(self, width: int, height: int) -> None:
         # TODO maybe empty _rendered/invalidate caches etc.?
