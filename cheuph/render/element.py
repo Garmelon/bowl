@@ -40,9 +40,10 @@ class Element(abc.ABC):
 
     @abc.abstractmethod
     def render(self,
+            width: int,
             depth: int,
-            highlighted: bool,
-            folded: bool,
+            highlighted: bool = False,
+            folded: bool = False,
             ) -> RenderedElement:
         pass
 
@@ -152,6 +153,10 @@ class RenderedElement:
     @property
     def element(self) -> Element:
         return self._element
+
+    @property
+    def lines(self) -> List[AttributedText]:
+        return self._lines
 
     @property
     def height(self) -> int:

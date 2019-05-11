@@ -274,8 +274,27 @@ class TreeDisplay:
         It should be called just before drawing the display lines to the curses
         window.
         """
+        filler_line = AttributedText(" " * self.width)
 
-        pass # TODO
+        if self._rendered is None:
+            self._display_lines = [filler_line] * self.height
+            return
+
+        lines = []
+
+        if self._rendered.upper_offset > 0:
+            # Fill the screen with empty lines until we hit the actual messages
+            lines.extend([filler_line] * self._rendered.upper_offset)
+
+        rendered_lines = self._rendered.to_lines(start=0, stop=self.height-1)
+        lines.extend(line for line, rendered in rendered_lines)
+
+        if self._rendered.lower_offset < self.height - 1:
+            # Fill the rest of the screen with empty lines
+            lines_left = self.height - 1 - self._rendered.lower_offset
+            lines.extend([filler_line] * lines_left)
+
+        self._display_lines = lines
 
     # SCROLLING
 

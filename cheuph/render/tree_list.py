@@ -1,25 +1,36 @@
 import collections
-from typing import Deque, List
+from typing import Deque, List, Optional, Tuple
 
 from .element import Id, RenderedElement
+from .markup import AttributedText
 
 __all__ = ["TreeList"]
 
 class TreeList:
+    """
+    This class is the stage between tree-like Element structures and lines of
+    text like the TreeDisplay's DisplayLines.
+
+    It keeps track of the results of rendering Element trees, and also the top
+    and bottom tree's ids, so the TreeList can be expanded easily by appending
+    trees to the top and bottom.
+
+    Despite its name, the "trees" it stores are just flat lists, and they're
+    stored in a flat deque one message at a time. Its name comes from how i is
+    used with rendered Element trees.
+    """
+
     def __init__(self,
             tree: List[RenderedElement],
             anchor_id: Id,
             ) -> None:
-        self._deque: Deque = collections.deque()
+        self._deque: Deque[RenderedElement] = collections.deque()
 
         # The offsets can be thought of as the index of a line relative to the
         # anchor's first line.
         #
         # The upper offset is the index of the uppermost message's first line.
-        # upper_offset <= 0.
-        #
         # The lower offset is the index of the lowermost message's LAST line.
-        # lower_offset >= 0.
         self._upper_offset: int
         self._lower_offset: int
 
@@ -47,9 +58,14 @@ class TreeList:
     def lower_tree_id(self) -> Id:
         return self._lower_tree_id
 
-    def offset_by(self, offset: int) -> None:
-        self._upper_offset += offset
-        self._lower_offset += offset
+    def offset_by(self, delta: int) -> None:
+        """
+        Change all the TreeList's offsets by a delta (which is added to each
+        offset).
+        """
+
+        self._upper_offset += delta
+        self._lower_offset += delta
 
     def _add_first_tree(self,
             tree: List[RenderedElement],
@@ -81,6 +97,10 @@ class TreeList:
         self._lower_offset = offset - 1
 
     def add_above(self, tree: List[RenderedElement]) -> None:
+        """
+        Add a rendered tree above all current trees.
+        """
+
         if len(tree) == 0:
             raise ValueError("The tree must contain at least one element")
 
@@ -96,6 +116,10 @@ class TreeList:
         #self._deque.extendLeft(reversed(tree))
 
     def add_below(self, tree: List[RenderedElement]) -> None:
+        """
+        Add a rendered tree below all current trees.
+        """
+
         if len(tree) == 0:
             raise ValueError("The tree must contain at least one element")
 
@@ -109,3 +133,32 @@ class TreeList:
         #delta = sum(map(lambda r: r.height, tree))
         #self._lower_offset += delta
         #self._deque.extend(tree)
+
+    def to_lines(self,
+            start: Optional[int] = None,
+            stop: Optional[int] = None,
+            ) -> List[Tuple[AttributedText, RenderedElement]]:
+
+        offset = self.upper_offset
+        lines: List[Tuple[AttributedText, RenderedElement]] = []
+
+        # I'm creating this generator instead of using two nested for loops
+        # below, because I want to be able to break out of the for loop without
+        # the code getting too ugly, and because it's fun :)
+        all_lines = ((line, rendered)
+                for rendered in self._deque
+                for line in rendered.lines)
+
+        for line, rendered in all_lines:
+            after_start = start is not None and offset >= start
+            before_stop = stop is not None and offset <= stop
+
+            if after_start and before_stop:
+                lines.append((line, rendered))
+
+            if not before_stop:
+                break
+
+            offset += 1
+
+        return lines
