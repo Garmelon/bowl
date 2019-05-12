@@ -195,9 +195,10 @@ class TreeDisplay:
             self._rendered = None
             return
 
-        anchor_tree = self._render_tree(self.anchor_id)
+        ancestor_id = self._supply.get_furthest_ancestor_id(self.anchor_id)
+        ancestor_tree = self._render_tree(ancestor_id)
 
-        self._rendered = TreeList(anchor_tree, self.anchor_id)
+        self._rendered = TreeList(ancestor_tree, self.anchor_id)
         self._rendered.offset_by(self.anchor_offset)
 
         self._fill_screen_upwards()
