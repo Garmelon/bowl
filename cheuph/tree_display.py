@@ -257,11 +257,11 @@ class TreeDisplay:
             ))
 
         while True:
-            if self._rendered.lower_offset <= 0:
+            if self._rendered.lower_offset >= self.height - 1:
                 break
 
-            below_tree_id = self._supply.get_previous_id(
-                    self._rendered.upper_tree_id)
+            below_tree_id = self._supply.get_next_id(
+                    self._rendered.lower_tree_id)
 
             if below_tree_id is None:
                 break # We've hit the bottom of the supply
