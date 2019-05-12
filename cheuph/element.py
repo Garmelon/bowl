@@ -12,31 +12,18 @@ class Element(abc.ABC):
     def __init__(self,
             id: Id,
             parent_id: Optional[Id],
-            children: Optional[List[Element]],
             ) -> None:
         self._id = id
-        self._parent_id = id
+        self._parent_id = parent_id
 
-        self._children = children
 
     @property
     def id(self) -> Id:
         return self._id
 
     @property
-    def parent_id(self) -> Id:
+    def parent_id(self) -> Optional[Id]:
         return self._parent_id
-
-    @property
-    def children(self) -> List[Element]:
-        if self._children is None:
-            raise ElementException("Element doesn't know its children")
-
-        return self._children
-
-    @children.setter
-    def children(self, children: List[Element]) -> None:
-        self._children = children
 
     @abc.abstractmethod
     def render(self,
@@ -44,7 +31,7 @@ class Element(abc.ABC):
             depth: int,
             highlighted: bool = False,
             folded: bool = False,
-            ) -> RenderedElement:
+            ) -> "RenderedElement":
         pass
 
 class RenderedElement:
