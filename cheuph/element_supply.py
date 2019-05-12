@@ -1,5 +1,5 @@
 import abc
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from .element import Element, Id
 from .exceptions import TreeException
@@ -85,10 +85,16 @@ class ElementSupply(abc.ABC):
         Returns None if there is no previous sibling.
 
         Depending on the amount of elements in your ElementSupply, the default
-        implementation might get very slow.
+        implementation might get very slow and/or use a lot of memory.
         """
 
-        pass # TODO
+        siblings = self.get_children_ids(self.get_parent_id(element_id))
+        index = siblings.index(element_id)
+
+        if index <= 0:
+            return None
+        else:
+            return siblings[index - 1]
 
     def get_previous(self, element_id: Id) -> Optional[Element]:
         """
@@ -110,10 +116,16 @@ class ElementSupply(abc.ABC):
         Returns None if there is no next sibling.
 
         Depending on the amount of elements in your ElementSupply, the default
-        implementation might get very slow.
+        implementation might get very slow and/or use a lot of memory.
         """
 
-        pass # TODO
+        siblings = self.get_children_ids(self.get_parent_id(element_id))
+        index = siblings.index(element_id)
+
+        if index >= len(siblings) - 1:
+            return None
+        else:
+            return siblings[index + 1]
 
     def get_next(self, element_id: Id) -> Optional[Element]:
         """
@@ -149,3 +161,62 @@ class ElementSupply(abc.ABC):
 #            ) -> Element:
 #        return self.get(self.get_furthest_ancestor_id(element_id,
 #            root_id=root_id))
+
+class MemoryElementSupply(ElementSupply):
+    """
+    An in-memory implementation of an ElementSupply that works with any type of
+    Element.
+    """
+
+    def __init__(self) -> None:
+        self._elements: Dict[Id, Element] = {}
+        self._children: Dict[Id, List[Id]] = {}
+
+    def add(self, element: Element) -> None:
+        """
+        Add a new element or overwrite an existing element with the same id.
+        """
+
+        if element.id in self._elements:
+            self.remove(element.id)
+
+        self._elements[element.id] = element
+        self._children[element.id] = []
+
+        if element.parent_id is not None:
+            self._children[element.parent_id].append(element.id)
+
+    def remove(self, element_id: Id) -> None:
+        """
+        Remove an element. This function does nothing if the element doesn't
+        exist in this ElementSupply.
+        """
+
+        if element_id in self._elements:
+            element = self.get(element_id)
+
+            self._elements.pop(element_id)
+            self._children.pop(element_id)
+
+            if element.parent_id is not None:
+                self._children[element.parent_id].remove(element.id)
+
+    def get(self, element_id: Id) -> Element:
+        result = self._elements.get(element_id)
+
+        if result is None:
+            raise TreeException(f"Element with id {element_id!r} could not be found")
+
+        return result
+
+    def get_children_ids(self, element_id: Optional[Id]) -> List[Id]:
+        result: Optional[List[Id]]
+        if element_id is None:
+            result = list(element.id for element in self._elements.values())
+        else:
+            result = self._children.get(element_id)
+
+        if result is None:
+            raise TreeException(f"Element with id {element_id!r} could not be found")
+
+        return result
