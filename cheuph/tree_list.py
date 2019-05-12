@@ -96,6 +96,8 @@ class TreeList:
         # below that.
         self._lower_offset = offset - 1
 
+        self._deque.extend(tree)
+
     def add_above(self, tree: List[RenderedElement]) -> None:
         """
         Add a rendered tree above all current trees.
