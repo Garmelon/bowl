@@ -261,7 +261,7 @@ class AttributedText:
 
         return blocks
 
-    def split_by(self, attribute_name: str) -> List[Tuple[Any, "AttributedText"]]:
+    def split_by(self, attribute_name: str) -> List[Tuple["AttributedText", Any]]:
         blocks = []
 
         chunks: List[Chunk] = []
@@ -288,6 +288,10 @@ class AttributedText:
         return blocks
 
     def join(self, segments: Iterable["AttributedText"]) -> "AttributedText":
+        # Lazy and inefficient solution to the fact that segments can be any
+        # Iterable. TODO: Optimize, if this becomes a bottleneck.
+        segments = list(segments)
+
         interspersed = segments[:1]
         for segment in segments[1:]:
             interspersed.append(self)
