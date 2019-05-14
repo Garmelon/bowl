@@ -261,6 +261,44 @@ class AttributedText:
 
         return blocks
 
+    def split_by(self, attribute_name: str) -> List[Tuple[Any, "AttributedText"]]:
+        blocks = []
+
+        chunks: List[Chunk] = []
+        attribute: Any = None
+
+        for chunk in self._chunks:
+            chunk_attr = chunk.attributes.get(attribute_name)
+
+            if chunks:
+                if attribute == chunk_attr:
+                    chunks.append(chunk)
+                else:
+                    blocks.append((self.from_chunks(chunks), attribute))
+
+                    chunks = [chunk]
+                    attribute = chunk_attr
+            else:
+                chunks.append(chunk)
+                attribute = chunk_attr
+
+        if chunks:
+            blocks.append((self.from_chunks(chunks), attribute))
+
+        return blocks
+
+    def join(self, segments: Iterable["AttributedText"]) -> "AttributedText":
+        interspersed = segments[:1]
+        for segment in segments[1:]:
+            interspersed.append(self)
+            interspersed.append(segment)
+
+        chunks = []
+        for segment in interspersed:
+            chunks.extend(segment.chunks)
+
+        return self.from_chunks(chunks)
+
     def set(self,
             name: str,
             value: Any,
