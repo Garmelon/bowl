@@ -1,6 +1,6 @@
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
-__all__ = ["Attributes", "Chunk", "AttributedText"]
+__all__ = ["Attributes", "Chunk", "AttributedText", "AT"]
 
 Attributes = Dict[str, Any]
 
@@ -284,3 +284,5 @@ class AttributedText:
         else:
             middle = self[start:stop].remove(name)
             return self[:start] + middle + self[stop:]
+
+AT = AttributedText
