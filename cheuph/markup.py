@@ -104,10 +104,28 @@ class AttributedText:
 
     # Common special methods
 
-    def __init__(self, text: Optional[str] = None) -> None:
+    def __init__(self,
+            text: Optional[str] = None,
+            attributes: Attributes = {},
+            **kwargs: Any,
+            ) -> None:
+        """
+        text - the content of the AttributedText, omitting it results in the
+          AttributedText equivalent to an empty string
+
+        attributes - a dict of attributes that apply to the whole
+          AttributedText
+
+        **kwargs - all named arguments besides "attributes" are interpreted
+          as attributes that override any options set in the "attributes" dict
+        """
+
+        attributes = dict(attributes)
+        attributes.update(kwargs)
+
         self._chunks: List[Chunk] = []
         if text is not None:
-            self._chunks.append(Chunk(text))
+            self._chunks.append(Chunk(text, attributes=attributes))
 
     def __str__(self) -> str:
         return self.text
