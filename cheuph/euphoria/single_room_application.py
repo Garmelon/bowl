@@ -9,8 +9,9 @@ __all__ = ["SingleRoomApplication"]
 
 class ChooseRoomWidget(urwid.WidgetWrap):
     def __init__(self) -> None:
-        self.text = urwid.Text("Choose a room:", align="center")
-        self.edit = urwid.Edit("&", align="center")
+        self.error = None
+        self.text = urwid.Text("Choose a room:", align=urwid.CENTER)
+        self.edit = urwid.Edit("&", align=urwid.CENTER)
         self.pile = urwid.Pile([
             self.text,
             urwid.AttrMap(self.edit, Style.ROOM),
@@ -18,8 +19,16 @@ class ChooseRoomWidget(urwid.WidgetWrap):
         self.filler = urwid.Filler(self.pile)
         super().__init__(self.filler)
 
+    def render(self, size: Any, focus: Any) -> Any:
+        if self.error:
+            width, _ = size
+            rows = self.error.rows((width,), focus)
+            self.filler.bottom = rows
+
+        return super().render(size, focus)
+
     def set_error(self, text: Any) -> None:
-        self.error = urwid.Text(text, align="center")
+        self.error = urwid.Text(text, align=urwid.CENTER)
         self.pile = urwid.Pile([
             self.error,
             self.text,
@@ -45,13 +54,17 @@ class ChooseRoomWidget(urwid.WidgetWrap):
         ]
         self.set_error(text)
 
-    def invalid_room_name(self) -> None:
-        # TODO animate the invalid room name thingy?
-        text = ["Invalid room name.\n"]
+    def invalid_room_name(self, reason: str) -> None:
+        text = [f"Invalid room name: {reason}\n"]
         self.set_error(text)
 
 class SingleRoomApplication(urwid.WidgetWrap):
-    ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+    # The characters in the ALPHABET make up the characters that are allowed in
+    # room names.
+    ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789"
+
+    # These are other characters or character combinations necessary for the
+    # editor to function well.
     ALLOWED_EDITOR_KEYS = {
             "backspace", "delete",
             "left", "right",
@@ -71,9 +84,9 @@ class SingleRoomApplication(urwid.WidgetWrap):
 
     def keypress(self, size: Any, key: str) -> Optional[str]:
         if self._w == self.choose_room:
-            # This leads to the editor jumping around the screen.
-            #
-            # TODO Find a way for the editor to stay still.
+            if key == "esc":
+                raise urwid.ExitMainLoop()
+
             self.choose_room.unset_error()
 
             if key == "enter":
@@ -84,6 +97,8 @@ class SingleRoomApplication(urwid.WidgetWrap):
                     urwid.connect_signal(room, "close", self.switch_to_choose)
                     room.connect()
                     self._w = room
+                else:
+                    self.choose_room.invalid_room_name("too short")
 
             # Make sure we only enter valid room names
             elif key.lower() in self.ALPHABET:
