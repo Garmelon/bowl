@@ -2,19 +2,21 @@ from typing import Any, Optional
 
 import urwid
 
-from .palette import Style
+from ..config import Config
 from .room_widget import RoomWidget
 
 __all__ = ["SingleRoomApplication"]
 
 class ChooseRoomWidget(urwid.WidgetWrap):
-    def __init__(self) -> None:
+    def __init__(self, config: Config) -> None:
+        self.c = config
+
         self.error = None
         self.text = urwid.Text("Choose a room:", align=urwid.CENTER)
         self.edit = urwid.Edit("&", align=urwid.CENTER)
         self.pile = urwid.Pile([
             self.text,
-            urwid.AttrMap(self.edit, Style.ROOM),
+            urwid.AttrMap(self.edit, self.c.v.element.room),
         ])
         self.filler = urwid.Filler(self.pile)
         super().__init__(self.filler)
@@ -32,7 +34,7 @@ class ChooseRoomWidget(urwid.WidgetWrap):
         self.pile = urwid.Pile([
             self.error,
             self.text,
-            urwid.AttrMap(self.edit, Style.ROOM),
+            urwid.AttrMap(self.edit, self.c.v.element.room),
         ])
         self.filler = urwid.Filler(self.pile)
         self._w = self.filler
@@ -41,7 +43,7 @@ class ChooseRoomWidget(urwid.WidgetWrap):
         self.error = None
         self.pile = urwid.Pile([
             self.text,
-            urwid.AttrMap(self.edit, Style.ROOM),
+            urwid.AttrMap(self.edit, self.c.v.element.room),
         ])
         self.filler = urwid.Filler(self.pile)
         self._w = self.filler
@@ -49,7 +51,7 @@ class ChooseRoomWidget(urwid.WidgetWrap):
     def could_not_connect(self, roomname: str) -> None:
         text = [
                 "Could not connect to ",
-                (Style.ROOM, "&" + roomname),
+                (self.c.v.element.room, "&" + roomname),
                 ".\n",
         ]
         self.set_error(text)
@@ -71,8 +73,10 @@ class SingleRoomApplication(urwid.WidgetWrap):
             "home", "end",
     }
 
-    def __init__(self) -> None:
-        self.choose_room = ChooseRoomWidget()
+    def __init__(self, config: Config) -> None:
+        self.c = config
+
+        self.choose_room = ChooseRoomWidget(self.c)
         super().__init__(self.choose_room)
 
     def selectable(self) -> bool:
@@ -93,13 +97,15 @@ class SingleRoomApplication(urwid.WidgetWrap):
                 roomname = self.choose_room.edit.edit_text
 
                 if roomname:
-                    room = RoomWidget(roomname)
+                    room = RoomWidget(self.c, roomname)
                     urwid.connect_signal(room, "close", self.switch_to_choose)
                     room.connect()
                     self._w = room
                 else:
                     self.choose_room.invalid_room_name("too short")
 
+            elif not super().selectable():
+                return key
             # Make sure we only enter valid room names
             elif key.lower() in self.ALPHABET:
                 return super().keypress(size, key.lower())
@@ -108,5 +114,7 @@ class SingleRoomApplication(urwid.WidgetWrap):
 
             return None
 
-        else:
+        elif super().selectable():
             return super().keypress(size, key)
+
+        return key

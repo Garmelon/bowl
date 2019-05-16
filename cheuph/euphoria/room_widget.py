@@ -1,11 +1,10 @@
 import asyncio
-from typing import Any, List
+from typing import Any, List, Optional
 
 import urwid
-
 import yaboli
 
-from .palette import Style
+from ..config import Config
 from ..markup import AT
 from ..widgets import ATWidget
 
@@ -30,7 +29,8 @@ class RoomWidget(urwid.WidgetWrap):
        event
     """
 
-    def __init__(self, roomname: str) -> None:
+    def __init__(self, config: Config, roomname: str) -> None:
+        self.c = config
         self._room = yaboli.Room(roomname)
 
         super().__init__(self._connecting_widget())
@@ -38,19 +38,19 @@ class RoomWidget(urwid.WidgetWrap):
 
     def _connecting_widget(self) -> Any:
         lines = [AT("Connecting to ")
-                + AT("&" + self.room.name, style=Style.ROOM)
+                + AT("&" + self.room.name, style=self.c.v.element.room)
                 + AT("...")]
         return CenteredTextWidget(lines)
 
     def _connected_widget(self) -> Any:
         lines = [AT("Connected to ")
-                + AT("&" + self.room.name, style=Style.ROOM)
+                + AT("&" + self.room.name, style=self.c.v.element.room)
                 + AT(".")]
         return CenteredTextWidget(lines)
 
     def _connection_failed_widget(self) -> Any:
         lines = [AT("Could not connect to ")
-                + AT("&" + self.room.name, style=Style.ROOM)
+                + AT("&" + self.room.name, style=self.c.v.element.room)
                 + AT(".")]
         return CenteredTextWidget(lines)
 
@@ -73,7 +73,10 @@ class RoomWidget(urwid.WidgetWrap):
 
 # Handle input
 
-    def selectable(self) -> bool:
-        return True
+    #def selectable(self) -> bool:
+    #    return True
+
+    #def keypress(self, size: Any, key: str) -> Optional[str]:
+    #    pass
 
 urwid.register_signal(RoomWidget, ["close"])

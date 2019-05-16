@@ -92,6 +92,10 @@ class Config:
         return ConfigView(self.tree)
 
     @property
+    def v(self) -> "ConfigView":
+        return self.view
+
+    @property
     def tree(self) -> Any:
         both = dict(self.default_fields)
         both.update(self.fields)
