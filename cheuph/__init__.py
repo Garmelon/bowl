@@ -1,5 +1,6 @@
 from typing import List
 
+from .config import *
 from .element import *
 from .element_supply import *
 from .exceptions import *
@@ -9,6 +10,7 @@ from .tree_list import *
 from .widgets import *
 
 __all__: List[str] = []
+__all__ += config.__all__
 __all__ += element.__all__
 __all__ += element_supply.__all__
 __all__ += exceptions.__all__
