@@ -89,42 +89,40 @@ class Config:
 
     @property
     def view(self) -> "ConfigView":
-        return ConfigView(
-                self.to_tree(self.default_fields),
-                self.to_tree(self.fields),
-        )
+        return ConfigView(self.tree)
+
+    @property
+    def tree(self) -> Any:
+        both = dict(self.default_fields)
+        both.update(self.fields)
+        return self.to_tree(both)
 
 class ConfigView:
     def __init__(self,
-            default_fields: Any,
             fields: Any,
             prefix: str = "",
             ) -> None:
 
-        self._default_fields = default_fields
         self._fields = fields
         self._prefix = prefix
 
     def __getattr__(self, name: str) -> Any:
+        return self._get(name)
+
+    def __getitem__(self, name: str) -> Any:
+        return self._get(name)
+
+    def _get(self, name: str) -> Any:
         """
         This function assumes that _default_fields and _fields have the same
         dict structure.
         """
 
-        default_field = self._default_fields.get(name)
         field = self._fields.get(name)
 
-        if isinstance(field, dict) or isinstance(default_field, dict):
-            # At least one is a dict, the other is either also a dict of the
-            # same structure or None.
-            default_field = default_field or {}
-            field = field or {}
-
-            return ConfigView(default_field, field, f"{self._prefix}{name}.")
-
-        value = default_field if field is None else field
-
-        if value is None:
+        if isinstance(field, dict):
+            return ConfigView(field, f"{self._prefix}{name}.")
+        elif field is None:
             raise ConfigException(f"Field {self._prefix}{name} does not exist")
 
-        return value
+        return field
