@@ -1,3 +1,11 @@
+# TODO define a config structure including config element descriptions and
+# default values
+#
+# TODO improve interface for accessing config values
+#
+# TODO load from and save to yaml file (only the values which differ from the
+# defaults or which were explicitly set)
+
 from typing import Any, Dict
 
 __all__ = ["Fields", "Config", "ConfigView"]

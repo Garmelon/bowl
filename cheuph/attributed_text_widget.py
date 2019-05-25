@@ -33,7 +33,7 @@ class AttributedTextWidget(urwid.Text):
     def _convert_to_markup(text: AttributedText
             ) -> List[Union[str, Tuple[str, str]]]:
 
-        # Wonder why it can't figure out the type signature of markup on its
+        # Wonder why mypy can't figure out the type signature of markup on its
         # own... :P
         markup: List[Union[str, Tuple[str, str]]]
         markup = [
@@ -50,6 +50,14 @@ class AttributedTextWidget(urwid.Text):
 
         self._attributed_text = text
         super().set_text(self._convert_to_markup(text))
+
+    def set_text(self, *args, **kwargs):
+        """
+        This function should not be used directly. Instead, use
+        set_attributed_text().
+        """
+
+        raise NotImplementedError("use set_attributed_text() instead")
 
     def get_attributed_text(self) -> AttributedText:
         """
