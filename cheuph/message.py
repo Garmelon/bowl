@@ -1,5 +1,6 @@
 __all__ = ["Message", "RenderedMessage"]
 
+
 class Message:
     """
     A Message represents a single euphoria message. It contains the information
@@ -14,6 +15,7 @@ class Message:
     """
 
     pass
+
 
 class RenderedMessage:
     """

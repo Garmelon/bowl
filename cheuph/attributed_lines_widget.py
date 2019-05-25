@@ -1,5 +1,6 @@
 __all__ = ["AttributedLinesWidget", "ALWidget"]
 
+
 class AttributedLinesWidget:
     """
     This widget draws lines of AttributedText with a horizontal and a vertical

@@ -1,5 +1,6 @@
 __all__ = ["MessageTreeWidget"]
 
+
 class MessageTreeWidget:
     """
     This widget displays an ElementSupply, including user interface like a

@@ -1,5 +1,6 @@
 __all__ = ["MessageSupply"]
 
+
 class MessageSupply:
     """
     A MessageSupply holds all of a room's known messages. It can be queried in

@@ -1,5 +1,6 @@
 __all__ = ["AttributedLines"]
 
+
 class AttributedLines:
     """
     AttributedLines is a list of lines of AttributedText that maintains a

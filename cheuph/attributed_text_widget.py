@@ -2,9 +2,10 @@ from typing import Any, List, Tuple, Union
 
 import urwid
 
-from ..markup import AttributedText
+from .markup import AttributedText
 
 __all__ = ["AttributedTextWidget", "ATWidget"]
+
 
 class AttributedTextWidget(urwid.Text):
     """
@@ -51,7 +52,7 @@ class AttributedTextWidget(urwid.Text):
         self._attributed_text = text
         super().set_text(self._convert_to_markup(text))
 
-    def set_text(self, *args, **kwargs):
+    def set_text(self, *args: Any, **kwargs: Any) -> None:
         """
         This function should not be used directly. Instead, use
         set_attributed_text().

@@ -10,10 +10,13 @@ from typing import Any, Dict
 
 __all__ = ["Fields", "Config", "ConfigView"]
 
+
 Fields = Dict[str, Any]
+
 
 class ConfigException(Exception):
     pass
+
 
 class Config:
     @staticmethod
@@ -108,6 +111,7 @@ class Config:
         both = dict(self.default_fields)
         both.update(self.fields)
         return self.to_tree(both)
+
 
 class ConfigView:
     def __init__(self,

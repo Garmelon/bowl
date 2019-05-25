@@ -1,5 +1,6 @@
 __all__ = ["UserListWidget"]
 
+
 class UserListWidget:
     """
     This widget displays the users currently connected to a Room.
