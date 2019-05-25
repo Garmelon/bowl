@@ -1,4 +1,9 @@
-__all__ = ["Message", "RenderedMessage"]
+from typing import Hashable
+
+__all__ = ["Id", "Message", "RenderedMessage"]
+
+
+Id = Hashable
 
 
 class Message:

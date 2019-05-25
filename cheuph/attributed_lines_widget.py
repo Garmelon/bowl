@@ -1,4 +1,4 @@
-__all__ = ["AttributedLinesWidget", "ALWidget"]
+__all__ = ["AttributedLinesWidget"]
 
 
 class AttributedLinesWidget:
@@ -12,5 +12,3 @@ class AttributedLinesWidget:
     """
 
     pass
-
-ALWidget = AttributedLinesWidget

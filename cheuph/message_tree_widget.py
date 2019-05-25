@@ -1,7 +1,17 @@
+from typing import Optional, Set
+
+import urwid
+import yaboli
+
+from .attributed_lines_widget import AttributedLinesWidget
+from .message import Id
+from .message_supply import MessageSupply
+from .rendered_message_cache import RenderedMessageCache
+
 __all__ = ["MessageTreeWidget"]
 
 
-class MessageTreeWidget:
+class MessageTreeWidget(urwid.WidgetWrap):
     """
     This widget displays an ElementSupply, including user interface like a
     cursor or folding markers. It usually is part of a RoomWidget. It also
@@ -24,4 +34,35 @@ class MessageTreeWidget:
     finishes editing it.
     """
 
-    pass
+    ROOM_IS_EMPTY = "<no messages>"
+
+    def __init__(self,
+            room: yaboli.Room,
+            supply: MessageSupply,
+            ) -> None:
+
+        self.room = room
+        self.supply = supply
+        self.rendered = RenderedMessageCache()
+        self.lines = AttributedLinesWidget()
+        self.placeholder = urwid.Filler(urwid.Text(self.ROOM_IS_EMPTY,
+            align=urwid.CENTER))
+
+        # If the anchor is None, but the cursor isn't, the cursor is used as
+        # the anchor.
+        self.cursor: Optional[Id] = None
+        self.anchor: Optional[Id] = None
+        self.anchor_offset = 0
+
+        self.folds: Set[Id] = set()
+
+        super().__init__(self.placeholder)
+
+    def invalidate_message(self, message_id: Id) -> None:
+        pass
+
+    def invalidate_all_messages(self) -> None:
+        pass
+
+    def redraw(self) -> None:
+        pass
