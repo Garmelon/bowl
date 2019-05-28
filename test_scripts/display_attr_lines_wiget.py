@@ -7,10 +7,13 @@ from cheuph import AT, AttributedLines, AttributedLinesWidget
 
 class TestWidget(urwid.WidgetWrap):
     def __init__(self):
+        long_line = AT("super", style="red")
+        long_line += AT(" long", style="cyan")
+        long_line += AT(" line", style="magenta")
         lines = [
-                ({}, AT("a")),
-                ({}, AT("Hello world")),
-                ({}, AT("super long line " * 20)),
+                ({}, AT("abc", style="green")),
+                ({"style": "blue"}, AT("Hello world")),
+                ({}, AT(" ").join([long_line] * 10)),
         ]
         self.lines = AttributedLinesWidget(AttributedLines(lines))
         super().__init__(self.lines)
@@ -32,7 +35,19 @@ class TestWidget(urwid.WidgetWrap):
 
 def main():
     screen = urwid.curses_display.Screen()
-    loop = urwid.MainLoop(TestWidget(), screen=screen)
+    palette = [
+            ("red", "light red", ""),
+            ("yellow", "yellow", ""),
+            ("green", "light green", ""),
+            ("blue", "light blue", ""),
+            ("magenta", "light magenta", ""),
+            ("cyan", "light cyan", ""),
+    ]
+    loop = urwid.MainLoop(
+            TestWidget(),
+            screen=screen,
+            palette=palette,
+        )
     loop.run()
 
 main()
