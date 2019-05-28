@@ -42,11 +42,23 @@ class AttributedLines:
     def lower_offset(self, lower_offset: int) -> None:
         self.upper_offset = lower_offset - (len(self) - 1)
 
+    # Modifying functions
+
     def append_above(self, line: Line) -> None:
+        """
+        Append a line above all already existing lines. The existing lines'
+        offsets do not change.
+        """
+
         self._lines.appendleft(line)
         self.upper_offset -= 1
 
     def append_below(self, line: Line) -> None:
+        """
+        Append a line below all already existing lines. The existing lines'
+        offsets do not change.
+        """
+
         self._lines.append(line)
         # lower offset does not need to be modified since it's calculated based
         # on the upper offset
@@ -70,7 +82,14 @@ class AttributedLines:
         # lower offset does not need to be modified since it's calculated based
         # on the upper offset
 
+    # Non-modifying functions
+
     def between(self, start_offset: int, end_offset: int) -> "AttributedLines":
+        """
+        Returns a new AttributedLines object containing only the lines between
+        (and including) start_offset and end_offset.
+        """
+
         lines = []
 
         for i, line in enumerate(self):
@@ -83,6 +102,12 @@ class AttributedLines:
         return attr_lines
 
     def to_size(self, start_offset: int, end_offset: int) -> "AttributedLines":
+        """
+        Same as between(), but fills the AttributedLines with empty lines where
+        necessary so that the new upper_offset is the start_offset and the new
+        lower_offset is the end_offset.
+        """
+
         between = self.between(start_offset, end_offset)
 
         while between.upper_offset > start_offset:
@@ -101,6 +126,16 @@ class AttributedLines:
             offset_char: str = " ",
             overlap_char: str = "…",
             ) -> AttributedText:
+        """
+        Renders a single line to a specified width with a specified horizontal
+        offset, applying all line-wide attributes to the result. The length of
+        the resulting line is exactly the specified width.
+
+        The offset_char is used to pad the line if it is shorter than required.
+
+        The overlap_char is used to mark the lines that extend beyond the right
+        edge of the widget.
+        """
 
         attributes, text = line
         # column to the right is reserved for the overlap char
@@ -147,6 +182,9 @@ class AttributedLines:
             height: int,
             horizontal_offset: int,
             ) -> List[AttributedText]:
+        """
+        Renders all lines individually.
+        """
 
         lines = []
 
@@ -160,6 +198,10 @@ class AttributedLines:
             height: int,
             horizontal_offset: int,
             ) -> AttributedText:
+        """
+        Renders all lines and combines them into a single AttributedText by
+        joining them with a newline.
+        """
 
         lines = self.render_lines(width, height,
                 horizontal_offset=horizontal_offset)
