@@ -33,6 +33,13 @@ class TestWidget(urwid.WidgetWrap):
         elif key == "down":
             self.lines.upper_offset -= 1
 
+    def mouse_event(self, size, event, button, col, row, focus):
+        if event == "mouse press":
+            if button == 4:
+                self.lines.upper_offset += 1
+            if button == 5:
+                self.lines.upper_offset -= 1
+
 def main():
     screen = urwid.curses_display.Screen()
     palette = [

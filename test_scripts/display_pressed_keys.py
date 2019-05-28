@@ -19,7 +19,7 @@ class TestWidget(urwid.WidgetWrap):
         self.text.set_text("\n".join(self.last_keys))
 
     def mouse_event(self, size, event, button, col, row, focus):
-        self.last_keys.append(f"{size!r} {event!r} {button!r} ({row}, {col})")
+        self.last_keys.append(f"{event!r} {button!r} ({row}, {col})")
         self.last_keys = self.last_keys[-self.KEY_LIMIT:]
         self.text.set_text("\n".join(self.last_keys))
 
