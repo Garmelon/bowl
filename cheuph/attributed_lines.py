@@ -1,5 +1,12 @@
-__all__ = ["AttributedLines"]
+import collections
+from typing import Deque, Iterator, List, Optional, Tuple
 
+from .markup import AT, AttributedText, Attributes
+
+__all__ = ["Line", "AttributedLines"]
+
+
+Line = Tuple[Attributes, AttributedText]
 
 class AttributedLines:
     """
@@ -7,11 +14,153 @@ class AttributedLines:
     vertical offset.
 
     When rendering a tree of messages, the RenderedMessage-s are drawn line by
-    line to an AttributedLines. AttributedLines. The AttributedLines is then
-    displayed in an AttributedLinesWidget.
+    line to an AttributedLines. The AttributedLines is then displayed in an
+    AttributedLinesWidget.
 
     Multiple AttributedLines can be concatenated, keeping either the first or
     the second AttributedLines's offset.
     """
 
-    pass
+    def __init__(self, lines: Optional[List[Line]] = None) -> None:
+        self.upper_offset = 0
+        self._lines: Deque[Line] = collections.deque(lines or [])
+
+    def __iter__(self) -> Iterator[Line]:
+        return self._lines.__iter__()
+
+    def __len__(self) -> int:
+        return len(self._lines)
+
+    @property
+    def lower_offset(self) -> int:
+        # When there's one element in the list, the lower and upper offsets are
+        # the same. From that follows that in an empty list, the lower offset
+        # must be smaller than the upper offset.
+        return self.upper_offset + (len(self) - 1)
+
+    @lower_offset.setter
+    def lower_offset(self, lower_offset: int) -> None:
+        self.upper_offset = lower_offset - (len(self) - 1)
+
+    def append_above(self, line: Line) -> None:
+        self._lines.appendleft(line)
+        self.upper_offset -= 1
+
+    def append_below(self, line: Line) -> None:
+        self._lines.append(line)
+        # lower offset does not need to be modified since it's calculated based
+        # on the upper offset
+
+    def expand_above(self, lines: "AttributedLines") -> None:
+        """
+        Prepend an AttributedLines, ignoring its offsets and using the current
+        AttributedLines's offsets instead.
+        """
+
+        self._lines.extendleft(lines._lines)
+        self.upper_offset -= len(lines)
+
+    def expand_below(self, lines: "AttributedLines") -> None:
+        """
+        Append an AttributedLines, ignoring its offsets and using the current
+        AttributedLines's offsets instead.
+        """
+
+        self._lines.extend(lines._lines)
+        # lower offset does not need to be modified since it's calculated based
+        # on the upper offset
+
+    def between(self, start_offset: int, end_offset: int) -> "AttributedLines":
+        lines = []
+
+        for i, line in enumerate(self):
+            line_offset = self.upper_offset + i
+            if start_offset <= line_offset <= end_offset:
+                lines.append(line)
+
+        attr_lines = AttributedLines(lines)
+        attr_lines.upper_offset = max(start_offset, self.upper_offset)
+        return attr_lines
+
+    def to_size(self, start_offset: int, end_offset: int) -> "AttributedLines":
+        between = self.between(start_offset, end_offset)
+
+        while between.upper_offset > start_offset:
+            between.append_above(({}, AT()))
+
+        while between.lower_offset < end_offset:
+            between.append_below(({}, AT()))
+
+        return between
+
+    @staticmethod
+    def render_line(
+            line: Line,
+            width: int,
+            horizontal_offset: int,
+            offset_char: str = " ",
+            overlap_char: str = "…",
+            ) -> AttributedText:
+
+        attributes, text = line
+        # column to the right is reserved for the overlap char
+        text_width = width - 1
+
+        start_offset = horizontal_offset
+        end_offset = start_offset + text_width
+
+        result: AttributedText = AT()
+
+        if start_offset < 0:
+            pad_length = min(text_width, -start_offset)
+            result += AT(offset_char * pad_length)
+
+        if end_offset < 0:
+            pass # the text should not be displayed at all
+        elif end_offset < len(text):
+            if start_offset > 0:
+                result += text[start_offset:end_offset]
+            else:
+                result += text[:end_offset]
+        else:
+            if start_offset > 0:
+                result += text[start_offset:]
+            else:
+                result += text
+
+        if end_offset > len(text):
+            pad_length = min(text_width, end_offset - len(text))
+            result += AT(offset_char * pad_length)
+
+        if end_offset < len(text):
+            result += AT(overlap_char)
+        else:
+            result += AT(offset_char)
+
+        for k, v in attributes.items():
+            result = result.set(k, v)
+
+        return result
+
+    def render_lines(self,
+            width: int,
+            height: int,
+            horizontal_offset: int,
+            ) -> List[AttributedText]:
+
+        lines = []
+
+        for line in self.to_size(0, height - 1):
+            lines.append(self.render_line(line, width, horizontal_offset))
+
+        return lines
+
+    def render(self,
+            width: int,
+            height: int,
+            horizontal_offset: int,
+            ) -> AttributedText:
+
+        lines = self.render_lines(width, height,
+                horizontal_offset=horizontal_offset)
+        return AT("\n").join(lines)
