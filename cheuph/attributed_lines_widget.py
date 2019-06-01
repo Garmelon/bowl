@@ -1,3 +1,5 @@
+# TODO send event on mouse click
+
 from typing import Any, Optional, Tuple
 
 import urwid

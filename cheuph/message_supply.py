@@ -1,3 +1,7 @@
+from typing import List, Optional
+
+from .message import Id, Message
+
 __all__ = ["MessageSupply"]
 
 
@@ -12,4 +16,24 @@ class MessageSupply:
     similar.
     """
 
-    pass
+    # TODO should throw exception if it can't find the message
+    def get(self, message_id: Id) -> Message:
+        pass # TODO
+
+    def children_ids(self, message_id: Id) -> List[Id]:
+        pass # TODO
+
+    def parent_id(self, message_id: Id) -> Optional[Id]:
+        pass # TODO
+
+    def oldest_ancestor_id(self, message_id: Id) -> Id:
+        pass # TODO
+
+    def previous_id(self, message_id: Id) -> Optional[Id]:
+        pass # TODO
+
+    def next_id(self, message_id: Id) -> Optional[Id]:
+        pass # TODO
+
+    def lowest_root_id(self) -> Optional[Id]:
+        pass # TODO

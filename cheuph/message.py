@@ -1,4 +1,8 @@
-from typing import Hashable
+from dataclasses import dataclass
+from typing import Hashable, List
+
+from .attributed_lines import AttributedLines
+from .markup import AttributedText
 
 __all__ = ["Id", "Message", "RenderedMessage"]
 
@@ -19,9 +23,10 @@ class Message:
     truncation status.
     """
 
-    pass
+    def render(self, width: int) -> RenderedMessage:
+        pass # TODO
 
-
+@dataclass
 class RenderedMessage:
     """
     A RenderedMessage is the result of rendering a Message. It contains lines
@@ -40,4 +45,6 @@ class RenderedMessage:
     rather the result of rendering a Message.
     """
 
-    pass
+    message_id: Id
+    meta: AttributedText
+    lines: List[AttributedText]

@@ -1,3 +1,6 @@
+# TODO retrieve attributes of any (x, y) coordinates
+# TODO retrieve attributes of closest existing line (by y coordinate)
+
 import collections
 from typing import Deque, Iterator, List, Optional, Tuple
 
@@ -7,6 +10,7 @@ __all__ = ["Line", "AttributedLines"]
 
 
 Line = Tuple[Attributes, AttributedText]
+
 
 class AttributedLines:
     """
@@ -44,26 +48,30 @@ class AttributedLines:
 
     # Modifying functions
 
-    def append_above(self, line: Line) -> None:
+    def append_above(self,
+            attributes: Attributes,
+            text: AttributedText) -> None:
         """
         Append a line above all already existing lines. The existing lines'
         offsets do not change.
         """
 
-        self._lines.appendleft(line)
+        self._lines.appendleft((attributes, text))
         self.upper_offset -= 1
 
-    def append_below(self, line: Line) -> None:
+    def append_below(self,
+            attributes: Attributes,
+            text: AttributedText) -> None:
         """
         Append a line below all already existing lines. The existing lines'
         offsets do not change.
         """
 
-        self._lines.append(line)
+        self._lines.append((attributes, text))
         # lower offset does not need to be modified since it's calculated based
         # on the upper offset
 
-    def expand_above(self, lines: "AttributedLines") -> None:
+    def extend_above(self, lines: "AttributedLines") -> None:
         """
         Prepend an AttributedLines, ignoring its offsets and using the current
         AttributedLines's offsets instead.
@@ -72,7 +80,7 @@ class AttributedLines:
         self._lines.extendleft(lines._lines)
         self.upper_offset -= len(lines)
 
-    def expand_below(self, lines: "AttributedLines") -> None:
+    def extend_below(self, lines: "AttributedLines") -> None:
         """
         Append an AttributedLines, ignoring its offsets and using the current
         AttributedLines's offsets instead.
@@ -111,10 +119,10 @@ class AttributedLines:
         between = self.between(start_offset, end_offset)
 
         while between.upper_offset > start_offset:
-            between.append_above(({}, AT()))
+            between.append_above({}, AT())
 
         while between.lower_offset < end_offset:
-            between.append_below(({}, AT()))
+            between.append_below({}, AT())
 
         return between
 
