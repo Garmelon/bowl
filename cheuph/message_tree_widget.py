@@ -1,7 +1,6 @@
-from typing import Optional, Set
+from typing import Optional, Set, Tuple
 
 import urwid
-
 import yaboli
 
 from .attributed_lines import AttributedLines
@@ -13,6 +12,18 @@ from .rendered_message_cache import RenderedMessageCache
 
 __all__ = ["MessageTreeWidget"]
 
+
+"""
+(lines, delta, hit_top, hit_bottom)
+
+- lines - the rendered AttributedLines
+- delta - how the absolute_anchor_offset needed to be changed to comply with
+  the scrolling rules
+- hit_top - whether the renderer arrived at the topmost message of the supply
+- hit_bottom - whether the renderer arrived at the bottommost message of the
+  supply
+"""
+RenderResult = Tuple[AttributedLines, int, bool, bool]
 
 class MessageTreeWidget(urwid.WidgetWrap):
     """
@@ -53,7 +64,6 @@ class MessageTreeWidget(urwid.WidgetWrap):
         self.rendered = RenderedMessageCache()
         # The lines that were last rendered
         self.lines = AttributedLines()
-        #
         # Widget tha displays self.lines
         self.lines_widget = AttributedLinesWidget()
         # A placeholder if there are no messages to display
@@ -159,14 +169,14 @@ class MessageTreeWidget(urwid.WidgetWrap):
         Invalidate the RenderedMessage cached under message_id.
         """
 
-        pass # TODO
+        self.cache.invalidate(message_id)
 
     def invalidate_all_messages(self) -> None:
         """
         Invalidate all cached RenderedMessage-s.
         """
 
-        pass # TODO
+        self.cache.invalidate_all()
 
     # Rendering a single message
 
@@ -234,21 +244,16 @@ class MessageTreeWidget(urwid.WidgetWrap):
         return lines
 
     def _render_cursor(self, indent: AttributedText = AT()) -> AttributedLines:
-        pass # TODO
-
-    # Rendering the tree
-
-    def _render_tree(self, root_id: Id) -> AttributedLines:
-        """
-        A wrapper around _render_subtree(), for ease of use.
-
-        Doesn't adjust the offset; the AttributedLines returned does NOT take
-        into account the attribute_offset.
-        """
+        # Quick and dirty cursor rendering
+        nick = self.room.session.nick
+        text = indent + AT(f"[{nick}]")
 
         lines = AttributedLines()
-        self.render_subtree(lines, root_id)
+        lines.append_below({"cursor": True}, text)
+
         return lines
+
+    # Rendering the tree
 
     def _render_subtree(self,
             lines: AttributedLines,
@@ -291,6 +296,18 @@ class MessageTreeWidget(urwid.WidgetWrap):
             cursor_indent = indent + AT("┗━")
             lines.extend_below(self._render_cursor(indent))
 
+    def _render_tree(self, root_id: Id) -> AttributedLines:
+        """
+        A wrapper around _render_subtree(), for ease of use.
+
+        Doesn't adjust the offset; the AttributedLines returned does NOT take
+        into account the attribute_offset.
+        """
+
+        lines = AttributedLines()
+        self.render_subtree(lines, root_id)
+        return lines
+
     def _render_tree_containing(self, message_id: Id) -> AttributedLines:
         """
         Similar to _render_tree(), but finds the root of the specified message
@@ -305,17 +322,16 @@ class MessageTreeWidget(urwid.WidgetWrap):
             lines: AttributedLines,
             ancestor_id: Id,
             target_upper_offset: int,
-            ) -> Id:
+            ) -> Tuple[Id, bool]:
         """
-        Render trees and prepend them to the AttributedLines until its
-        upper_offset matches or exceeds the target_upper_offset.
+        Render trees (including the cursor) and prepend them to the
+        AttributedLines until its upper_offset matches or exceeds the
+        target_upper_offset.
 
-        Returns the last tree id that was rendered. If no tree could be
-        rendered, returns the original anchor id.
+        Returns whether it has hit the top of the supply.
 
-        Starts at the first older sibling of the ancestor_id (the first sibling
-        above the ancestor_id) and moves upwards sibling by sibling. Does not
-        render the ancestor_id itself.
+        Assumes that the ancestor_id's tree is already rendered. Moves upwards
+        through the siblings of the ancestor_id.
         """
 
         # This loop doesn't use a condition but rather break-s, because I think
@@ -324,31 +340,33 @@ class MessageTreeWidget(urwid.WidgetWrap):
         last_rendered_id = ancestor_id
 
         while True:
-            if lines.upper_offset <= target_upper_offset: break
-
+            # Doing this check first because of a possible edge case: Using the
+            # other order, if the first message fills the screen, the function
+            # would return False, even though we've hit the top.
             next_id = self.supply.previous_id(last_rendered_id)
-            if next_id is None: break
+            if next_id is None:
+                return last_rendered_id, True
+
+            if lines.upper_offset <= target_upper_offset:
+                return last_rendered_id, False
 
             lines.extend_above(self._render_tree(next_id))
             last_rendered_id = next_id
-
-        return last_rendered_id
 
     def _expand_downwards_until(self,
             lines: AttributedLines,
             ancestor_id: Id,
             target_lower_offset: int,
-            ) -> Id:
+            ) -> Tuple[Id, bool]:
         """
-        Render trees and append them to the AttributedLines until its
-        lower_offset matches or exceeds the target_lower_offset.
+        Render trees (including the cursor, even if it's at the bottom) and
+        append them to the AttributedLines until its lower_offset matches or
+        exceeds the target_lower_offset.
 
-        Returns the last tree id that was rendered. If no tree could be
-        rendered, returns the original anchor id.
+        Returns whether it has hit the bottom of the supply.
 
-        Starts at the first younger sibling of the ancestor_id (the first
-        sibling below the ancestor_id) and moves downwards sibling by sibling.
-        Does not render the ancestor_id itself.
+        Assumes that the ancestor_id's tree is already rendered. Moves
+        downwards through the siblings of the ancestor_id.
         """
 
         # Almost the same as _expand_upwards_until(), but with small changes.
@@ -361,93 +379,207 @@ class MessageTreeWidget(urwid.WidgetWrap):
         last_rendered_id = ancestor_id
 
         while True:
-            if lines.upper_offset >= target_lower_offset: break
-
+            # Doing this check first because of a possible edge case: Using the
+            # other order, if the last message fills the screen, the function
+            # would return False, even though we've hit the bottom.
             next_id = self.supply.next_id(last_rendered_id)
-            if next_id is None: break
+            if next_id is None:
+                break
+
+            if lines.lower_offset >= target_lower_offset:
+                return last_rendered_id, False
 
             lines.extend_below(self._draw_tree(next_id))
             last_rendered_id = next_id
 
-        return last_rendered_id
+        lines.extend_below(self._render_cursor())
+        return last_rendered_id, True
 
     # Rendering the screen
 
-    def _render_screen(self) -> AttributedLines:
+    """
+    On scrolling:
+
+    These are some restrictions on how the screen can scroll and thus how the
+    anchor_offset is interpreted. They are listed from most to least important.
+
+    1. There must always be something (a message, the cursor or similar) on the
+       bottommost line.
+
+    2. There must always be something on the topmost line.
+
+    Good:
+
+    ------------------------
+
+
+    first message
+    | bla
+    | | blabla
+    | last message
+    ------------------------
+
+    and
+
+    ------------------------
+    first message
+    | bla
+    | blabla
+    | | more bla
+    | | even more bla
+    | not the last message
+    ------------------------
+
+    Bad:
+
+    ------------------------
+    first message
+    | bla
+    | | blabla
+    | last message
+
+
+    ------------------------
+
+    and
+
+    ------------------------
+
+
+    first message
+    | bla
+    | | blabla
+    | not the last message
+    ------------------------
+    """
+
+    def _render_screen_from_cursor(self) -> RenderResult:
+        """
+        Uses the following strategy:
+        1. Render the cursor
+        2. Render the lowest tree, if there is one
+        3. Extend upwards until the top of the screen, if necessary
+        """
+
+        # Step 1
+        lines = self._render_cursor()
+        # No need to use the anchor offset since we know we're always at the
+        # bottom of the screen
+        lines.lower_offset = self.height - 1
+        delta = self.height - 1 - self.absolute_anchor_offset
+
+        # Step 2
+        hit_top: bool
+        lowest_root_id = self.supply.lowest_root_id()
+        if lowest_root_id is None:
+            hit_top = True
+        else:
+            lines.extend_above(self._render_tree(lowest_root_id))
+
+            # Step 3
+            _, hit_top = self._expand_upwards_until(lines, lowest_root_id, 0)
+
+        return lines, delta, hit_top, True # we're always at the bottom
+
+    def _render_screen_from_anchor(self, anchor_id: Id) -> RenderResult:
+        """
+        Uses the following strategy:
+        1. Render the anchor's tree
+        2. Extend upwards until the top of the screen
+        3. Adjust the offset to match rule 2
+        4. Extend downwards until the bottom of the screen
+        5. Adjust the offset to match rule 1
+        6. Extend upwards again until the top of the screen
+        """
+
+        delta = 0
+
+        # Step 1
+        ancestor_id = self.supply.oldest_ancestor_id(anchor_id)
+        lines = self._render_tree(ancestor_id)
+        lines.upper_offset += self.absolute_anchor_offset
+
+        # Step 2
+        upper_id, hit_top = self._expand_upwards_until(lines, ancestor_id, 0)
+
+        # Step 3
+        if lines.upper_offset > 0:
+            delta -= lines.upper_offset
+            lines.upper_offset = 0
+
+        # Step 4
+        _, hit_bottom = self._expand_downwards_until(lines, ancestor_id,
+                self.height - 1)
+
+        # Step 5
+        if lines.lower_offset < self.height - 1:
+            delta += self.height - 1 - lines.lower_offset
+
+        # Step 6
+        if not hit_top:
+            _, hit_top = self._expand_upwards_until(lines, upper_id, 0)
+
+        return lines, delta, hit_top, hit_bottom
+
+    def _render_screen(self) -> RenderResult:
         """
         Render an AttributedLines that fills the screen (as far as possible),
         taking into account the anchor offset.
-
-        This does NOT fix scrolling (i. e. by min()- or max()-ing the upper and
-        lower offsets). Instead, scrolling should be fixed when the anchor
-        offset is changed or the resolution changes.
         """
 
-        # TODO maybe extend with an additional offset for scrolling
+        if self.cursor_id is None and self.anchor_id is None:
+            return self._render_screen_from_cursor()
 
-        lines: AttributedLines
-
-        if self.cursor_id is None:
-            # If the cursor is None, that means that it should always be
-            # displayed at the very bottom of the room. It also means that
-            # _render_subtree() can't render the cursor, because it would be
-            # the root of a message tree.
-
-            if self.anchor_id is None:
-                # Start with the cursor
-                lines = self._render_cursor()
-                lines.upper_offset = self.absolute_anchor_offset
-                # Then expand upwards
-                lowest_root_id = self.supply.lowest_root_id()
-                if lowest_root_id is not None:
-                    self._expand_upwards_until(lines, lowest_root_id, 0)
-            else:
-                # Start with the anchor as usual
-                lines = self._render_tree_containing(self.anchor_id)
-                lines.upper_offset += self.absolute_anchor_offset
-                # And expand until the screen is full
-                self._expand_upwards_until(lines, self.anchor_id, 0)
-                until_id = self._expand_downwards_until(lines, self.anchor_id,
-                        self.height - 1)
-                # After that, draw the cursor below, if necessary
-                lowest_root_id = self.supply.lowest_root_id()
-                if until_id == lowest_root_id:
-                    lines.extend_below(self._render_cursor())
+        working_id: Id
+        if self.anchor_id is None:
+            # self.cursor_id can't be None, otherwise the first if
+            # condition would have been met and this part wouldn't have
+            # been executed in the first place.
+            working_id = self.cursor_id # type: ignore
         else:
-            # In this case, the cursor is automatically rendered correctly by
-            # _render_subtree(), so we actually don't have to do a lot.
-            #
-            # This case is the normal case, and the case I thought of first
-            # when I designed this part.
+            working_id = self.anchor_id
 
-            working_id: Id
-            if self.anchor_id is None:
-                working_id = self.cursor_id
-            else:
-                working_id = self.anchor_id
-
-            ancestor_id = self.supply.oldest_ancestor_id(working_id)
-            lines = self._render_tree(ancestor_id)
-            lines.upper_offset += self.absolute_anchor_offset
-            self._expand_upwards_until(lines, ancestor_id, 0)
-            self._expand_downwards_until(lines, ancestor_id,
-                    self.height - 1)
-
-        return lines
+        return self._render_screen_from_anchor(working_id)
 
     # Updating the internal widget
 
-    def redraw(self) -> None:
+    def _update_with_lines(self, lines: AttributedLines) -> None:
         """
-        Render new lines and draw them (to the internal widget and thus to the
-        screen on the next screen update).
+        Update evrything that needs to be updated when a new set of lines comes
+        in.
         """
 
-        lines = self._render_screen()
-        self.lines_widget.set_lines(lines)
+        self.lines = lines
+        self.lines_widget.set_lines(self.lines)
+
         self._w = self.lines_widget
         self._invalidate() # Just to make sure this really gets rendered
 
-    # Cursor movement
+    def redraw(self, fix_anchor_offset: bool = False) -> Tuple[bool, bool]:
+        """
+        Render new lines and draw them (to the internal widget and thus to the
+        screen on the next screen update).
+
+        Returns a tuple (hit_top, hit_bottom):
+        - hit_top - whether the renderer arrived at the topmost message of the
+          supply
+        - hit_bottom - whether the renderer arrived at the bottommost message
+          of the supply
+        """
+
+        lines, delta, hit_top, hit_bottom = self._render_screen()
+        self._update_with_lines(lines)
+
+        if fix_anchor_offset and delta != 0:
+            self.absolute_anchor_offset += delta
+
+        return hit_top, hit_bottom
 
     # Scrolling
+
+    def scroll_by(self, delta: int) -> None:
+        self.absolute_anchor_offset += delta
+
+    # Cursor movement
+
+    # TODO
