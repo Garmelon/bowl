@@ -1,8 +1,9 @@
+import datetime
 from dataclasses import dataclass
 from typing import Hashable, List
 
 from .attributed_lines import AttributedLines
-from .markup import AttributedText
+from .markup import AT, AttributedText
 
 __all__ = ["Id", "Message", "RenderedMessage"]
 
@@ -10,6 +11,7 @@ __all__ = ["Id", "Message", "RenderedMessage"]
 Id = Hashable
 
 
+@dataclass
 class Message:
     """
     A Message represents a single euphoria message. It contains the information
@@ -23,8 +25,24 @@ class Message:
     truncation status.
     """
 
-    def render(self, width: int) -> RenderedMessage:
-        pass # TODO
+    message_id: Id
+    time: datetime.datetime
+    nick: str
+    content: str
+
+    def render(self, width: int) -> "RenderedMessage":
+        lines = self.content.split("\n")
+
+        meta = AT(self.time.strftime("%H:%M "))
+
+        nick = AT(f"[{self.nick}] ")
+        nick_spaces = AT(" " * len(nick))
+
+        result = []
+        result.append(nick + AT(lines[0]))
+        result.extend(nick_spaces + AT(line) for line in lines[1:])
+
+        return RenderedMessage(self.message_id, meta, result)
 
 @dataclass
 class RenderedMessage:
