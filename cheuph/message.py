@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Hashable, List
+from typing import Hashable, List, Optional
 
 from .attributed_lines import AttributedLines
 from .markup import AT, AttributedText
@@ -25,7 +25,8 @@ class Message:
     truncation status.
     """
 
-    message_id: Id
+    id: Id
+    parent_id: Optional[Id]
     time: datetime.datetime
     nick: str
     content: str
@@ -42,7 +43,7 @@ class Message:
         result.append(nick + AT(lines[0]))
         result.extend(nick_spaces + AT(line) for line in lines[1:])
 
-        return RenderedMessage(self.message_id, meta, result)
+        return RenderedMessage(self.id, meta, result)
 
 @dataclass
 class RenderedMessage:

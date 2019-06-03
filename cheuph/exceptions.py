@@ -1,9 +1,4 @@
-__all__ = ["ElementException", "TreeException"]
+__all__ = ["MessageSupplyException"]
 
-
-class ElementException(Exception):
-    pass
-
-
-class TreeException(Exception):
+class MessageSupplyException(Exception):
     pass
