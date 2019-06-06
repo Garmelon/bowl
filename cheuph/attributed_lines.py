@@ -8,9 +8,7 @@ from .markup import AT, AttributedText, Attributes
 
 __all__ = ["Line", "AttributedLines"]
 
-
 Line = Tuple[Attributes, AttributedText]
-
 
 class AttributedLines:
     """
