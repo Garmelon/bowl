@@ -2,12 +2,12 @@ from abc import ABC, abstractmethod
 from typing import Generic, Optional, Tuple, TypeVar
 
 from .attributed_lines import AttributedLines
-from .element import Element, Id, RenderedElement, RenderedMessage
+from .element import Element, Id, Message, RenderedElement, RenderedMessage
 from .element_supply import ElementSupply
 from .markup import AT, AttributedText, Attributes
 from .rendered_element_cache import RenderedElementCache
 
-__all__ = ["CursorRenderer", "CursorTreeRenderer"]
+__all__ = ["CursorRenderer", "CursorTreeRenderer", "BasicCursorRenderer"]
 
 E = TypeVar("E", bound=Element)
 R = TypeVar("R", bound=RenderedElement)
@@ -15,8 +15,8 @@ M = TypeVar("M", bound=RenderedMessage) # because it has a meta field
 
 class CursorRenderer(ABC, Generic[E, R]):
 
-    @abstractmethod
     @property
+    @abstractmethod
     def meta_width(self) -> int:
         pass
 
@@ -59,6 +59,7 @@ class CursorTreeRenderer(Generic[E]):
 
         # Rendering result
         self._lines = AttributedLines()
+        self._hit_top = False
 
         # Cursor and scrolling
         self._cursor_id: Optional[Id] = None
@@ -84,6 +85,10 @@ class CursorTreeRenderer(Generic[E]):
     def lines(self) -> AttributedLines:
         # Not sure if the between() is necessary
         return self._lines.between(0, self._height - 1)
+
+    @property
+    def hit_top(self) -> bool:
+        return self._hit_top
 
     # Offsets
 
@@ -270,7 +275,7 @@ class CursorTreeRenderer(Generic[E]):
         if self._cursor_id is None:
             lines.extend_below(self._render_cursor())
 
-    # Rendering the lines (finally)
+    # Rendering the lines
 
     def _render_lines_from_cursor(self) -> Tuple[AttributedLines, int, bool]:
         """
@@ -340,3 +345,53 @@ class CursorTreeRenderer(Generic[E]):
             _, hit_top = self._expand_upwards_until(lines, upper_id, 0)
 
         return lines, delta, hit_top
+
+    def _render_lines(self) -> Tuple[AttributedLines, int, bool]:
+        if self._cursor_id is None and self._anchor_id is None:
+            return self._render_lines_from_cursor()
+
+        if self._anchor_id is None:
+            working_id = self._cursor_id
+        else:
+            working_id = self._anchor_id
+
+        return self._render_lines_from_anchor(working_id)
+
+    # Finally, another public function! :P
+
+    def render(self, width: int, height: int) -> None:
+        if width != self._width:
+            self.invalidate_all()
+
+        self._width = width
+        self._height = height
+
+        lines, delta, hit_top = self._render_lines()
+
+        self._lines = lines
+        self._hit_top = hit_top
+
+class BasicCursorRenderer(CursorRenderer):
+
+    META_FORMAT = "%H:%M "
+    META_WIDTH = 6
+
+    @property
+    def meta_width(self) -> int:
+        return self.META_WIDTH
+
+    def render_element(self, message: Message, width: int) -> RenderedMessage:
+        meta = AT(message.timestamp.strftime(self.META_FORMAT))
+
+        nick = AT(f"[{message.nick}] ")
+        nick_spaces = AT(" " * len(nick))
+
+        lines = []
+        for i, line in enumerate(message.content.split("\n")):
+            text = (nick if i == 0 else nick_spaces) + AT(line)
+            lines.append(text)
+
+        return RenderedMessage(message.id, lines, meta)
+
+    def render_cursor(self, width: int) -> AttributedText:
+        return AT("<cursor>")
