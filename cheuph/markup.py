@@ -1,10 +1,8 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Iterable, List, Mapping, Optional, Tuple, Union
 
 __all__ = ["Attributes", "Chunk", "AttributedText", "AT"]
 
-
-Attributes = Dict[str, Any]
-
+Attributes = Mapping[str, Any]
 
 # TODO remove empty Chunks in join_chunks
 class Chunk:
@@ -45,6 +43,12 @@ class Chunk:
         return f"Chunk({self.text!r}, {self._attributes!r})"
 
     # Uncommon special methods
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Chunk):
+            return NotImplemented
+
+        return self._text == other._text and self._attributes == other._attributes
 
     def __getitem__(self, key: Union[int, slice]) -> "Chunk":
         return Chunk(self.text[key], self._attributes)
@@ -89,7 +93,6 @@ class Chunk:
         new_attributes.pop(name, None)
 
         return Chunk(self.text, new_attributes)
-
 
 class AttributedText:
     """
@@ -139,6 +142,12 @@ class AttributedText:
     def __add__(self, other: "AttributedText") -> "AttributedText":
         return AttributedText.from_chunks(self._chunks + other._chunks)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AttributedText):
+                return NotImplemented
+
+        return self._chunks == other._chunks
+
     def __getitem__(self, key: Union[int, slice]) -> "AttributedText":
         chunks: List[Chunk]
 
@@ -151,6 +160,12 @@ class AttributedText:
 
     def __len__(self) -> int:
         return sum(map(len, self._chunks))
+
+    def __mul__(self, other: int) -> "AttributedText":
+        if not isinstance(other, int):
+            return NotImplemented
+
+        return self.from_chunks(self.chunks * other)
 
     # Properties
 
@@ -325,7 +340,7 @@ class AttributedText:
             return self[:start] + middle + self[stop:]
 
     def set_at(self, name: str, value: Any, pos: int) -> "AttributedText":
-        return self.set(name, value, pos, pos)
+        return self.set(name, value, pos, pos + 1)
 
     def remove(self,
             name: str,
