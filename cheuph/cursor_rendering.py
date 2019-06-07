@@ -6,6 +6,7 @@ from typing import Generic, List, Optional, Tuple, TypeVar
 from .attributed_lines import AttributedLines
 from .element import Element, Id, Message, RenderedElement, RenderedMessage
 from .element_supply import ElementSupply
+from .exceptions import ShouldNeverHappen
 from .markup import AT, AttributedText, Attributes
 from .rendered_element_cache import RenderedElementCache
 
@@ -408,11 +409,9 @@ class CursorTreeRenderer(Generic[E]):
             return 0, middle_index
 
         if middle_index < self.lines.upper_offset:
-            raise Exception()
             attrs, _ = lines[0]
             index = self.lines.upper_offset
         elif middle_index > self.lines.lower_offset:
-            raise Exception()
             attrs, _ = lines[-1]
             index = self.lines.lower_offset
         else:
@@ -535,7 +534,7 @@ class CursorTreeRenderer(Generic[E]):
                 message = self._cache.get(mid)
 
             if message is None:
-                raise Exception() # TODO use better exception
+                raise ShouldNeverHappen(1)
 
             height += len(message.lines)
 
@@ -553,7 +552,7 @@ class CursorTreeRenderer(Generic[E]):
         below_new = self._element_id_below_cursor(new_cursor_id)
 
         if above_old is None:
-            raise Exception() # TODO use better exception
+            raise ShouldNeverHappen(2)
 
         # Moving horizontally at the bottom of the supply
         if below_new is None:
@@ -579,7 +578,7 @@ class CursorTreeRenderer(Generic[E]):
         above_new = self._element_id_above_cursor(new_cursor_id)
 
         if above_new is None:
-            raise Exception() # TODO use better exception
+            raise ShouldNeverHappen(3)
 
         # Moving horizontally at the bottom of the supply
         if below_old is None:
