@@ -174,7 +174,7 @@ class InMemorySupply(ElementSupply[E]):
         return elem.parent_id
 
     def _roots(self) -> List[Id]:
-        roots = (m for m in self._elements.values() if m.parent_id is None)
+        roots = (i for i, m in self._elements.items() if m.parent_id is None)
         return list(sorted(roots))
 
     def sibling_ids(self, elem_id: Id) -> List[Id]:
@@ -189,6 +189,6 @@ class InMemorySupply(ElementSupply[E]):
         roots = self._roots()
 
         if roots:
-            return roots[:-1]
+            return roots[-1]
         else:
             return None

@@ -75,7 +75,7 @@ class AttributedLines:
         AttributedLines's offsets instead.
         """
 
-        self._lines.extendleft(lines._lines)
+        self._lines.extendleft(reversed(lines._lines))
         self.upper_offset -= len(lines)
 
     def extend_below(self, lines: "AttributedLines") -> None:
@@ -105,6 +105,7 @@ class AttributedLines:
 
         attr_lines = AttributedLines(lines)
         attr_lines.upper_offset = max(start_offset, self.upper_offset)
+        attr_lines.lower_offset = min(end_offset, self.lower_offset)
         return attr_lines
 
     def to_size(self, start_offset: int, end_offset: int) -> "AttributedLines":

@@ -156,8 +156,10 @@ class CursorTreeRenderer(Generic[E]):
             ) -> AttributedLines:
         lines = AttributedLines()
         width = self._width - len(indent) - self._renderer.meta_width
+        meta_spaces = AT(" " * self._renderer.meta_width)
         attrs = {"cursor": True, "offset": 0}
-        lines.append_below(attrs, self._renderer.render_cursor(width))
+        lines.append_below(attrs, meta_spaces + indent +
+                self._renderer.render_cursor(width))
         return lines
 
     def _render_indent(self,
@@ -217,7 +219,7 @@ class CursorTreeRenderer(Generic[E]):
                 lines.lower_offset = -1
 
             cursor_indent = indent + self._render_indent(cursor_line=True)
-            lines.extend_below(self._render_cursor(indent))
+            lines.extend_below(self._render_cursor(cursor_indent))
 
     def _render_tree(self, root_id: Id) -> AttributedLines:
         lines = AttributedLines()
@@ -350,8 +352,9 @@ class CursorTreeRenderer(Generic[E]):
         if self._cursor_id is None and self._anchor_id is None:
             return self._render_lines_from_cursor()
 
+        working_id: Id
         if self._anchor_id is None:
-            working_id = self._cursor_id
+            working_id = self._cursor_id # type: ignore
         else:
             working_id = self._anchor_id
 
