@@ -2,7 +2,7 @@
 # TODO retrieve attributes of closest existing line (by y coordinate)
 
 import collections
-from typing import Deque, Iterator, List, Optional, Tuple
+from typing import Any, Deque, Iterator, List, Optional, Set, Tuple
 
 from .markup import AT, AttributedText, Attributes
 
@@ -213,3 +213,12 @@ class AttributedLines:
         lines = self.render_lines(width, height,
                 horizontal_offset=horizontal_offset)
         return AT("\n").join(lines)
+
+    def all_values(self, attribute: str) -> Set[Any]:
+        values = set()
+
+        for attributes, _ in self._lines:
+            if attribute in attributes:
+                values.add(attributes.get(attribute))
+
+        return values

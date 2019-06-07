@@ -1,3 +1,5 @@
+# TODO move meta spaces rendering to message
+
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, Tuple, TypeVar
 
@@ -287,12 +289,15 @@ class CursorTreeRenderer(Generic[E]):
         3. Extend upwards until the top of the screen, if necessary
         """
 
+        delta = 0
+
         # Step 1
         lines = self._render_cursor()
-        # No need to use the anchor offset since we know we're always at the
-        # bottom of the screen
-        lines.lower_offset = self._height - 1
-        delta = self._height - 1 - self._absolute_anchor_offset
+        lines.lower_offset = self._absolute_anchor_offset
+
+        if lines.lower_offset < self._height - 1:
+            delta = self._height - 1 - lines.lower_offset
+            lines.lower_offset = self._height - 1
 
         # Step 2
         lowest_root_id = self._supply.lowest_root_id()
@@ -360,6 +365,14 @@ class CursorTreeRenderer(Generic[E]):
 
         return self._render_lines_from_anchor(working_id)
 
+    def _render(self) -> int:
+        lines, delta, hit_top = self._render_lines()
+
+        self._lines = lines
+        self._hit_top = hit_top
+
+        return delta
+
     # Finally, another public function! :P
 
     def render(self, width: int, height: int) -> None:
@@ -369,10 +382,75 @@ class CursorTreeRenderer(Generic[E]):
         self._width = width
         self._height = height
 
-        lines, delta, hit_top = self._render_lines()
+        self._render()
 
-        self._lines = lines
-        self._hit_top = hit_top
+    # Scrolling
+
+    def _closest_to_middle(self) -> Tuple[Optional[Id], int]:
+        """
+        Finds the element/cursor closest to the middle of the screen, and its
+        on-screen offset.
+
+        Returns None instead of an Id if the cursor is the closest.
+        """
+
+        middle_index = self.get_absolute_offset(0.5, self._height)
+        lines = list(self.lines)
+
+        # This should never happen; there should always be at least a cursor.
+        # I'm just being defensive here.
+        if len(lines) < 1:
+            return 0, middle_index
+
+        if middle_index < self.lines.upper_offset:
+            raise Exception()
+            attrs, _ = lines[0]
+            index = self.lines.upper_offset
+        elif middle_index > self.lines.lower_offset:
+            raise Exception()
+            attrs, _ = lines[-1]
+            index = self.lines.lower_offset
+        else:
+            attrs, _ = lines[middle_index - self.lines.upper_offset]
+            index = middle_index
+
+        mid = attrs.get("mid")
+        # We know that all lines, including the cursor, have an offset.
+        index -= attrs.get("offset") or 0
+
+        return mid, index
+
+    def _find_cursor(self) -> Optional[int]:
+        for index, line in enumerate(self.lines):
+            attrs, _ = line
+
+            if attrs.get("cursor"):
+                return index
+
+        return None
+
+    def _cursor_visible(self) -> bool:
+        return True in self.lines.all_values("cursor")
+
+    def scroll(self, scroll_delta: int) -> None:
+        self._absolute_anchor_offset += scroll_delta
+
+        delta = self._render()
+        if delta != 0:
+            self._absolute_anchor_offset += delta + scroll_delta
+            self._render()
+
+        cursor_index = self._find_cursor()
+        if cursor_index is None:
+            closest, offset = self._closest_to_middle()
+
+            self._anchor_id = closest
+            self._absolute_anchor_offset = offset
+        else:
+            self._anchor_id = None
+            self._absolute_anchor_offset = cursor_index
+
+    # Moving the cursor
 
 class BasicCursorRenderer(CursorRenderer):
 
