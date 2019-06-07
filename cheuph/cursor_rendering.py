@@ -53,6 +53,7 @@ class CursorTreeRenderer(Generic[E]):
             cursor_corner: str = "┗",
             cursor_fill: str = "━",
             cursor_indent_attrs: Attributes = {},
+            scrolloff: int = 3,
             ) -> None:
 
         self._supply = supply
@@ -73,7 +74,10 @@ class CursorTreeRenderer(Generic[E]):
         self._height = 40
 
         # Configurable variables
-        if indent_width < 0: raise ValueError("indent width must be 0 or greater")
+        if indent_width < 0:
+            raise ValueError("indent width must be 0 or greater")
+        if scrolloff < 0:
+            raise ValueError("scrolloff must be 0 or greater")
         self._indent_width = indent_width
         self._indent = indent
         self._indent_fill = indent_fill
@@ -82,6 +86,7 @@ class CursorTreeRenderer(Generic[E]):
         self._cursor_corner = cursor_corner
         self._cursor_fill = cursor_fill
         self._cursor_indent_attrs = cursor_indent_attrs
+        self._scrolloff = scrolloff
 
     @property
     def lines(self) -> AttributedLines:
@@ -429,6 +434,12 @@ class CursorTreeRenderer(Generic[E]):
 
         return None
 
+    def _apply_scrolloff(self) -> None:
+        offset = self._absolute_anchor_offset
+        offset = max(self._scrolloff, offset)
+        offset = min(self._height - 1 - self._scrolloff, offset)
+        self._absolute_anchor_offset = offset
+
     def _focus_on_visible_cursor(self) -> bool:
         index = self._find_cursor_on_screen()
         if index is not None:
@@ -508,6 +519,8 @@ class CursorTreeRenderer(Generic[E]):
     def _focus_on_cursor(self) -> None:
         if not self._focus_on_visible_cursor():
             self._focus_on_offscreen_cursor()
+
+        self._apply_scrolloff()
 
     def _cursor_visible(self) -> bool:
         return True in self.lines.all_values("cursor")
