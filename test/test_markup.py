@@ -20,6 +20,7 @@ class TestAttributedText(unittest.TestCase):
 
     def test_equality_of_empty_text(self):
         self.assertEqual(AT(), AT())
+        self.assertEqual(AT(), AT(attribute="value"))
 
     def test_string_to_AT_to_string(self):
         for string in self.SAMPLE_STRINGS:
@@ -61,9 +62,11 @@ class TestAttributedText(unittest.TestCase):
     def test_slicing_and_putting_back_together_with_attributes(self):
         text2 = self.text[:4] + self.text[4:11] + self.text[11:22] + self.text[22:]
         text3 = self.text[:-20] + self.text[-20:-4] + self.text[-4:]
+        text4 = self.text[:3] + self.text[3] + self.text[4:]
 
         self.assertEqual(self.text, text2)
         self.assertEqual(self.text, text3)
+        self.assertEqual(self.text, text4)
 
     def test_removing_attributes(self):
         text = self.text.remove("attribute", 9, 15)
@@ -108,6 +111,43 @@ class TestAttributedText(unittest.TestCase):
 
         self.assertEqual(text1, text2)
 
-    # TODO test find_all()
-    # TODO test split_by()
-    # TODO test __mul__()
+    def test_repeating_by_multiplication(self):
+        text = AT("a", x=1) + AT("b", y=2)
+        repeated_1 = text + text + text + text + text
+        repeated_2 = text * 5
+        repeated_3 = AT().join([text] * 5)
+
+        self.assertEqual(repeated_1, repeated_2)
+        self.assertEqual(repeated_1, repeated_3)
+
+    def test_split_by(self):
+        split = self.text.split_by("attribute")
+        expected = [
+                (AT("This "), None),
+                (
+                    AT("is a sam", attribute="value") +
+                    AT("p", attribute="value", attribute2="value2") +
+                    AT("le stri", attribute="value"),
+                    "value"
+                ),
+                (AT("ng."), None),
+        ]
+        self.assertEqual(split, expected)
+
+        split = self.text.split_by("attribute2")
+        expected = [
+                (
+                    AT("This ") +
+                    AT("is a sam", attribute="value"),
+                    None
+                ),
+                (
+                    AT("p", attribute="value", attribute2="value2"),
+                    "value2"
+                ),
+                (
+                    AT("le stri", attribute="value") + AT("ng."),
+                    None
+                ),
+        ]
+        self.assertEqual(split, expected)
