@@ -246,37 +246,6 @@ class AttributedText:
             ) -> Any:
         return self._at(pos).get(name, default)
 
-    # "find all separate blocks with this property"
-    def find_all(self, name: str) -> List[Tuple[Any, int, int]]:
-        blocks = []
-        pos = 0
-        block = None
-
-        for chunk in self._chunks:
-            if name in chunk.attributes:
-                attribute = chunk.attributes[name]
-                start = pos
-                stop = pos + len(chunk)
-
-                if block is None:
-                    block = (attribute, start, stop)
-                    continue
-
-                block_attr, block_start, _ = block
-
-                if block_attr == attribute:
-                    block = (attribute, block_start, stop)
-                else:
-                    blocks.append(block)
-                    block = (attribute, start, stop)
-
-            pos += len(chunk)
-
-        if block is not None:
-            blocks.append(block)
-
-        return blocks
-
     def split_by(self, attribute_name: str) -> List[Tuple["AttributedText", Any]]:
         blocks = []
 
