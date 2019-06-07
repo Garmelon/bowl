@@ -1,39 +1,27 @@
 # TODO send event on mouse click
 
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import urwid
 
 from .attributed_lines import AttributedLines
 from .attributed_text_widget import AttributedTextWidget
-from .markup import AT, AttributedText, Attributes
+from .markup import AT
 
 __all__ = ["AttributedLinesWidget"]
 
-
 class AttributedLinesWidget(urwid.WidgetWrap):
     """
-    This widget draws lines of AttributedText with a horizontal and a vertical
-    offset. It can retrieve the attributes of any character by its (x, y)
-    coordinates. Line-wide attributes may be specified.
-
-    When clicked, it sends an event containing the attributes of the character
-    that was just clicked.
-
-    Uses the following config values:
-    - "filler_symbol"
-    - "overflow_symbol"
+    This widget draws an AttributedLines with a horizontal and a vertical
+    offset.
     """
 
-    def __init__(self,
-            lines: Optional[AttributedLines] = None,
-            ) -> None:
-
-        self._horizontal_offset = 0
-
+    def __init__(self, lines: Optional[AttributedLines] = None) -> None:
         self._text = AttributedTextWidget(AT())
         self._filler = urwid.Filler(self._text, valign=urwid.TOP)
         super().__init__(self._filler)
+
+        self._horizontal_offset = 0
 
         self.set_lines(lines or AttributedLines())
 

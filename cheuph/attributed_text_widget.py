@@ -6,7 +6,6 @@ from .markup import AttributedText
 
 __all__ = ["AttributedTextWidget", "ATWidget"]
 
-
 class AttributedTextWidget(urwid.Text):
     """
     A widget that works like urwid.Text, but displays AttributedText.
