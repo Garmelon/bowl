@@ -24,8 +24,6 @@ class CursorTreeWidget(urwid.WidgetWrap):
         self._lines = AttributedLinesWidget()
         super().__init__(self._lines)
 
-        self._tree._cursor_id = "->3->2->3"
-
     def render(self, size: Tuple[int, int], focus: bool) -> None:
         width, height = size
 
@@ -38,7 +36,15 @@ class CursorTreeWidget(urwid.WidgetWrap):
         return True
 
     def keypress(self, size: Tuple[int, int], key: str) -> Optional[str]:
-        if key == "shift up":
+        width, height = size
+
+        if key == "up":
+            self._tree.move_cursor_up()
+            self._invalidate()
+        elif key == "down":
+            self._tree.move_cursor_down()
+            self._invalidate()
+        elif key == "shift up":
             self._tree.scroll(1)
             self._invalidate()
         elif key == "shift down":
@@ -50,6 +56,12 @@ class CursorTreeWidget(urwid.WidgetWrap):
             self.scroll_horizontally(-1)
         elif key in {"home", "shift home"}:
             self._lines.horizontal_offset = 0
+            self._invalidate()
+        elif key == "shift page up":
+            self._tree.scroll(height - 1)
+            self._invalidate()
+        elif key == "shift page down":
+            self._tree.scroll(-(height - 1))
             self._invalidate()
         else:
             t = datetime.datetime(2019,5,7,13,25,6)

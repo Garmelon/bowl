@@ -1,7 +1,7 @@
 # TODO move meta spaces rendering to message
 
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, Tuple, TypeVar
+from typing import Generic, List, Optional, Tuple, TypeVar
 
 from .attributed_lines import AttributedLines
 from .element import Element, Id, Message, RenderedElement, RenderedMessage
@@ -420,7 +420,7 @@ class CursorTreeRenderer(Generic[E]):
 
         return mid, index
 
-    def _find_cursor(self) -> Optional[int]:
+    def _find_cursor_on_screen(self) -> Optional[int]:
         for index, line in enumerate(self.lines):
             attrs, _ = line
 
@@ -429,8 +429,14 @@ class CursorTreeRenderer(Generic[E]):
 
         return None
 
-    def _cursor_visible(self) -> bool:
-        return True in self.lines.all_values("cursor")
+    def _focus_on_visible_cursor(self) -> bool:
+        index = self._find_cursor_on_screen()
+        if index is not None:
+            self._anchor_id = None
+            self._absolute_anchor_offset = index
+            return True
+
+        return False
 
     def scroll(self, scroll_delta: int) -> None:
         self._absolute_anchor_offset += scroll_delta
@@ -440,17 +446,139 @@ class CursorTreeRenderer(Generic[E]):
             self._absolute_anchor_offset += delta + scroll_delta
             self._render()
 
-        cursor_index = self._find_cursor()
-        if cursor_index is None:
+        if not self._focus_on_visible_cursor():
             closest, offset = self._closest_to_middle()
 
             self._anchor_id = closest
             self._absolute_anchor_offset = offset
-        else:
-            self._anchor_id = None
-            self._absolute_anchor_offset = cursor_index
 
     # Moving the cursor
+
+    def _element_id_above_cursor(self,
+            cursor_id: Optional[Id],
+            ) -> Optional[Id]:
+
+        if cursor_id is None:
+            cursor_id = self._supply.lowest_root_id()
+            if cursor_id is None:
+                return None # empty supply
+
+        elem_id: Id = cursor_id
+        while True:
+            child_ids = self._supply.child_ids(elem_id)
+
+            if child_ids:
+                elem_id = child_ids[-1]
+            else:
+                return elem_id
+
+    def _element_id_below_cursor(self,
+            cursor_id: Optional[Id],
+            ) -> Optional[Id]:
+
+        above_id = self._element_id_above_cursor(cursor_id)
+        if above_id is None:
+            return None
+        else:
+            return self._supply.below_id(above_id)
+
+    def _focus_on_offscreen_cursor(self) -> None:
+        self._anchor_id = None
+
+        # There is always at least one element above the cursor if the supply
+        # isn't empty
+        closest_id = self._element_id_above_cursor(self._cursor_id)
+        if not closest_id:
+            # The supply is empty
+            self._anchor_offset = 0.5
+
+        # This can't be the cursor id since the cursor is offscreen
+        middle_id, _ = self._closest_to_middle()
+
+        cursor_ancestor_path = self._supply.ancestor_path(closest_id)
+        middle_ancestor_path = self._supply.ancestor_path(middle_id)
+
+        if cursor_ancestor_path < middle_ancestor_path:
+            # Cursor is above the screen somewhere
+            self._anchor_offset = 0
+        else:
+            # Cursor is below the screen somewhere
+            self._anchor_offset = 1
+
+    def _focus_on_cursor(self) -> None:
+        if not self._focus_on_visible_cursor():
+            self._focus_on_offscreen_cursor()
+
+    def _cursor_visible(self) -> bool:
+        return True in self.lines.all_values("cursor")
+
+    def _height_of(self, between_ids: List[Id]) -> int:
+        height = 0
+
+        for mid in between_ids:
+            message = self._cache.get(mid)
+            if message is None:
+                self._render_tree_containing(mid)
+                message = self._cache.get(mid)
+
+            if message is None:
+                raise Exception() # TODO use better exception
+
+            height += len(message.lines)
+
+        return height
+
+    def move_cursor_up(self) -> None:
+        new_cursor_id = self._supply.position_above_id(self._cursor_id)
+
+        if new_cursor_id is None:
+            # Already at the top
+            self._focus_on_cursor()
+            return
+
+        above_old = self._element_id_above_cursor(self._cursor_id)
+        below_new = self._element_id_below_cursor(new_cursor_id)
+
+        if above_old is None:
+            raise Exception() # TODO use better exception
+
+        # Moving horizontally at the bottom of the supply
+        if below_new is None:
+            height = 0
+        else:
+            between_ids = self._supply.between_ids(below_new, above_old)
+            height = self._height_of(between_ids)
+
+        self._cursor_id = new_cursor_id
+        self._absolute_anchor_offset -= height
+        self._render()
+        self._focus_on_cursor()
+
+    def move_cursor_down(self) -> None:
+        if self._cursor_id is None:
+            # Already at the bottom
+            self._focus_on_cursor()
+            return
+
+        new_cursor_id = self._supply.position_below_id(self._cursor_id)
+
+        below_old = self._element_id_below_cursor(self._cursor_id)
+        above_new = self._element_id_above_cursor(new_cursor_id)
+
+        if above_new is None:
+            raise Exception() # TODO use better exception
+
+        # Moving horizontally at the bottom of the supply
+        if below_old is None:
+            height = 0
+        else:
+            between_ids = self._supply.between_ids(below_old, above_new)
+            height = self._height_of(between_ids)
+
+        self._cursor_id = new_cursor_id
+        self._absolute_anchor_offset += height
+        self._render()
+        self._focus_on_cursor()
 
 class BasicCursorRenderer(CursorRenderer):
 

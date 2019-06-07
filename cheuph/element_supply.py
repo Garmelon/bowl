@@ -120,6 +120,102 @@ class ElementSupply(ABC, Generic[E]):
         except ValueError:
             return None
 
+    def above_id(self, elem_id: Id) -> Optional[Id]:
+        above_id = self.previous_id(elem_id)
+        if above_id is None:
+            return self.parent_id(elem_id)
+
+        while True:
+            child_ids = self.child_ids(above_id)
+            if child_ids:
+                above_id = child_ids[-1]
+            else:
+                return above_id
+
+    def below_id(self, elem_id: Id) -> Optional[Id]:
+        child_ids = self.child_ids(elem_id)
+        if child_ids:
+            return child_ids[0]
+
+        ancestor_id = elem_id
+        while True:
+            next_id = self.next_id(ancestor_id)
+            if next_id is not None:
+                return next_id
+
+            parent_id = self.parent_id(ancestor_id)
+            if parent_id is None:
+                return None
+
+            ancestor_id = parent_id
+
+    def position_above_id(self, elem_id: Optional[Id]) -> Optional[Id]:
+        if elem_id is None:
+            return self.lowest_root_id()
+
+        child_ids = self.child_ids(elem_id)
+        if child_ids:
+            return child_ids[-1]
+
+        ancestor_id = elem_id
+        while True:
+            prev_id = self.previous_id(ancestor_id)
+            if prev_id is not None:
+                return prev_id
+
+            parent_id = self.parent_id(ancestor_id)
+            if parent_id is None:
+                return None
+
+            ancestor_id = parent_id
+
+    def position_below_id(self, elem_id: Id) -> Optional[Id]:
+        below_id = self.next_id(elem_id)
+        if below_id is None:
+            return self.parent_id(elem_id)
+
+        while True:
+            child_ids = self.child_ids(below_id)
+            if child_ids:
+                below_id = child_ids[0]
+            else:
+                return below_id
+
+    def between_ids(self,
+            start_id: Id,
+            stop_id: Optional[Id],
+            ) -> List[Id]:
+
+        start_path = self.ancestor_path(start_id)
+        stop_path = self.ancestor_path(stop_id)
+
+        if start_path > stop_path:
+            return []
+        elif start_id == stop_id:
+            return [start_id]
+
+        between_ids = [start_id]
+        current_id = start_id
+        while current_id != stop_id:
+            below_id = self.below_id(current_id)
+
+            if below_id is None:
+                break
+
+            current_id = below_id
+            between_ids.append(current_id)
+
+        return between_ids
+
+    def ancestor_path(self, elem_id: Optional[Id]) -> List[Id]:
+        path = []
+
+        while elem_id is not None:
+            path.append(elem_id)
+            elem_id = self.parent_id(elem_id)
+
+        return list(reversed(path))
+
 class InMemorySupply(ElementSupply[E]):
     """
     This supply stores messages in memory. It orders the messages by their ids.
