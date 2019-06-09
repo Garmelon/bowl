@@ -56,6 +56,9 @@ class CursorTreeWidget(urwid.WidgetWrap):
         elif key in {"down", "j"}:
             self._tree.move_cursor_down()
             self._invalidate()
+        elif key in {"esc", "end", "G"}:
+            self._tree.move_cursor_to_bottom()
+            self._invalidate()
         elif key in {"shift up", "K"}:
             self._tree.scroll(self._vertical_scroll_step)
             self._invalidate()

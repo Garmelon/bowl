@@ -592,6 +592,11 @@ class CursorTreeRenderer(Generic[E]):
         self._render()
         self._focus_on_cursor()
 
+    def move_cursor_to_bottom(self) -> None:
+        self._cursor_id = None
+        self._render()
+        self._focus_on_cursor()
+
 class BasicCursorRenderer(CursorRenderer):
 
     META_FORMAT = "%H:%M "
