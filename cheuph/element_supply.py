@@ -74,6 +74,14 @@ class ElementSupply(ABC, Generic[E]):
 
         pass
 
+    @abstractmethod
+    def oldest_id(self) -> Optional[Id]:
+        """
+        Return the smallest id.
+        """
+
+        pass
+
     def root_id(self, elem_id: Id) -> Id:
         """
         Find the root of the tree that an element is contained in.
@@ -286,5 +294,12 @@ class InMemorySupply(ElementSupply[E]):
 
         if roots:
             return roots[-1]
+        else:
+            return None
+
+    def oldest_id(self) -> Optional[Id]:
+        ids = self._elements.keys()
+        if ids:
+            return min(ids)
         else:
             return None
