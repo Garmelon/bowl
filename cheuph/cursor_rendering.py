@@ -77,6 +77,16 @@ class CursorTreeRenderer(Generic[E]):
         # Configurable variables
         if indent_width < 0:
             raise ValueError("indent width must be 0 or greater")
+        if len(indent) != 1:
+            raise ValueError() # TODO add description to exception
+        if len(indent_fill) != 1:
+            raise ValueError() # TODO add description to exception
+        if len(cursor_indent) != 1:
+            raise ValueError() # TODO add description to exception
+        if len(cursor_corner) != 1:
+            raise ValueError() # TODO add description to exception
+        if len(cursor_fill) != 1:
+            raise ValueError() # TODO add description to exception
         if scrolloff < 0:
             raise ValueError("scrolloff must be 0 or greater")
         self._indent_width = indent_width
@@ -89,6 +99,8 @@ class CursorTreeRenderer(Generic[E]):
         self._cursor_indent_attrs = cursor_indent_attrs
         self._scrolloff = scrolloff
 
+    # Some properties
+
     @property
     def lines(self) -> AttributedLines:
         # Not sure if the between() is necessary
@@ -97,6 +109,10 @@ class CursorTreeRenderer(Generic[E]):
     @property
     def hit_top(self) -> bool:
         return self._hit_top
+
+    @property
+    def cursor_id(self) -> Optional[Id]:
+        return self._cursor_id
 
     # Offsets
 
