@@ -1,5 +1,6 @@
 # TODO retrieve attributes of any (x, y) coordinates
 # TODO retrieve attributes of closest existing line (by y coordinate)
+# TODO use ulen and unicode string splitting
 
 import collections
 from typing import Any, Deque, Iterator, List, Optional, Set, Tuple

@@ -10,6 +10,7 @@ from .element_supply import *
 from .exceptions import *
 from .markup import *
 from .rendered_element_cache import *
+from .utils import *
 
 __all__: List[str] = []
 
@@ -23,3 +24,4 @@ __all__ += element_supply.__all__
 __all__ += exceptions.__all__
 __all__ += markup.__all__
 __all__ += rendered_element_cache.__all__
+__all__ += utils.__all__
