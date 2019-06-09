@@ -144,7 +144,7 @@ class CursorTreeRenderer(Generic[E]):
             indent: AttributedText,
             ) -> AttributedLines:
 
-        width = self._width - len(indent) - self._renderer.meta_width
+        width = self._width - len(indent) - self._renderer.meta_width - 1
         rendered: RenderedMessage = self._get_rendered_message(message_id,
                 width)
 
@@ -163,7 +163,7 @@ class CursorTreeRenderer(Generic[E]):
             indent: AttributedText = AT(),
             ) -> AttributedLines:
         lines = AttributedLines()
-        width = self._width - len(indent) - self._renderer.meta_width
+        width = self._width - len(indent) - self._renderer.meta_width - 1
         meta_spaces = AT(" " * self._renderer.meta_width)
         attrs = {"cursor": True, "offset": 0}
         lines.append_below(attrs, meta_spaces + indent +
