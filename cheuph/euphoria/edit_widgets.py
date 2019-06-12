@@ -30,11 +30,15 @@ class EditWidget(urwid.WidgetWrap):
     def width(self) -> int:
         prompt_width, _ = self._prompt.pack(None)
         edit_width, _ = self._edit.pack(None)
-        return max(prompt_width, edit_width)
+        return max(prompt_width, edit_width + 1)
 
     @property
     def text(self) -> str:
         return self._edit.edit_text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        self._edit.edit_text = text
 
 class PasswordEditWidget(urwid.WidgetWrap):
 
@@ -65,11 +69,15 @@ class PasswordEditWidget(urwid.WidgetWrap):
     def width(self) -> int:
         prompt_width, _ = self._prompt.pack(None)
         edit_width, _ = self._edit.pack(None)
-        return max(prompt_width, edit_width)
+        return max(prompt_width, edit_width + 1)
 
     @property
     def text(self) -> str:
         return self._edit.edit_text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        self._edit.edit_text = text
 
     def update_fake_edit(self) -> None:
         fake_text = self._mask_char * len(self._edit.edit_text)
