@@ -1,4 +1,5 @@
 import unicodedata
+from typing import Set
 
 from ..cursor_rendering import CursorRenderer
 from ..element import Message, RenderedMessage
@@ -22,6 +23,7 @@ class EuphRenderer(CursorRenderer):
     def __init__(self,
             nick: str,
             replace_wide_unicode: bool = True,
+            replace_character_categories: Set[str] = {"Cf"},
             unicode_placeholder: str = "�",
             # Meta settings
             show_year: bool = False,
@@ -45,6 +47,7 @@ class EuphRenderer(CursorRenderer):
 
         self.nick = nick
         self._replace_wide_unicode = replace_wide_unicode
+        self._replace_character_categories = replace_character_categories
         self._unicode_placeholder = unicode_placeholder
         # Meta settings
         self._show_year = show_year
@@ -77,16 +80,18 @@ class EuphRenderer(CursorRenderer):
 
         return width
 
-    def _filter_unicode(self, text: str) -> str:
-        if not self._replace_wide_unicode:
-            return text
+    def _is_wide(self, char: str) -> bool:
+        return unicodedata.east_asian_width(char) not in self.NORMAL_WIDTH
 
+    def _filter_unicode(self, text: str) -> str:
         new_chars = []
         for char in text:
-            if unicodedata.east_asian_width(char) in self.NORMAL_WIDTH:
-                new_chars.append(char)
-            else:
+            if self._replace_wide_unicode and self._is_wide(char):
                 new_chars.append(self._unicode_placeholder)
+            elif unicodedata.category(char) in self._replace_character_categories:
+                pass
+            else:
+                new_chars.append(char)
 
         return "".join(new_chars)
 
