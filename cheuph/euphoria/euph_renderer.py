@@ -32,8 +32,8 @@ class EuphRenderer(CursorRenderer):
             surround_right: str = "]",
             surround_attrs: Attributes = {},
             # Cursor settings
-            cursor_surround_left: str = "[",
-            cursor_surround_right: str = "]",
+            cursor_surround_left: str = "<",
+            cursor_surround_right: str = ">",
             cursor_surround_attrs: Attributes = {},
             cursor_own_nick_attrs: Attributes = {},
             cursor_fill: str = " ",
@@ -107,7 +107,7 @@ class EuphRenderer(CursorRenderer):
 
         left = AT(self._surround_left, attributes=self._surround_attrs)
         nick = AT(self._filter_unicode(message.nick),
-                attributes=self._nick_attrs)
+                attributes=self._nick_attrs) # TODO detect own nick
         right = AT(self._surround_right, attributes=self._surround_attrs)
 
         nick_str = left + nick + right + AT(" ")
