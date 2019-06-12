@@ -3,7 +3,7 @@ from typing import Any, Optional
 import urwid
 
 from ..attributed_text_widget import ATWidget
-from ..markup import Attributes
+from ..markup import Attributes, AT
 from .edit_widgets import EditWidget
 from .room_widget import RoomWidget
 
@@ -51,12 +51,13 @@ class ChooseRoomWidget(urwid.WidgetWrap):
     def could_not_connect(self, roomname: str) -> None:
         text = AT("Could not connect to ", attributes=self._error_attrs)
         text += AT("&" + roomname, attributes=self._error_room_attrs)
-        text += AT(".", attributes=self._error_attrs)
+        text += AT(".\n", attributes=self._error_attrs)
 
         self.set_error(ATWidget(text, align=urwid.CENTER))
 
     def invalid_room_name(self, reason: str) -> None:
-        text = AT(f"Invalid room name: {reason}", attributes=self._error_attrs)
+        text = AT(f"Invalid room name: {reason}\n",
+                attributes=self._error_attrs)
         self.set_error(ATWidget(text, align=urwid.CENTER))
 
 class SingleRoomApplication(urwid.WidgetWrap):
@@ -81,7 +82,7 @@ class SingleRoomApplication(urwid.WidgetWrap):
         return True
 
     def switch_to_choose(self) -> None:
-        self.choose_room.could_not_connect(self.choose_room.edit.edit_text)
+        self.choose_room.could_not_connect(self.choose_room.edit.text)
         self._w = self.choose_room
 
     def keypress(self, size: Any, key: str) -> Optional[str]:
@@ -97,8 +98,8 @@ class SingleRoomApplication(urwid.WidgetWrap):
                 if roomname:
                     room = RoomWidget(roomname)
                     urwid.connect_signal(room, "close", self.switch_to_choose)
-                    room.connect()
                     self._w = room
+                    room.connect()
                 else:
                     self.choose_room.invalid_room_name("too short")
 
