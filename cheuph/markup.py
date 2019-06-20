@@ -4,8 +4,8 @@ __all__ = ["Attributes", "Chunk", "AttributedText", "AT"]
 
 Attributes = Mapping[str, Any]
 
-# TODO remove empty Chunks in join_chunks
 class Chunk:
+
     @staticmethod
     def join_chunks(chunks: List["Chunk"]) -> List["Chunk"]:
         if not chunks:
@@ -15,6 +15,9 @@ class Chunk:
 
         current_chunk = chunks[0]
         for chunk in chunks[1:]:
+            if not chunk.text:
+                continue
+
             joined_chunk = current_chunk._join(chunk)
 
             if joined_chunk is None:
