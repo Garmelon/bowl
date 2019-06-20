@@ -225,7 +225,23 @@ class RoomWidget(urwid.WidgetWrap):
     # These functions use (or rather: will use) self._conf.
 
     def _create_euph_renderer(self) -> EuphRenderer:
-        return EuphRenderer("")
+        return EuphRenderer(
+                "",
+                show_year=self.c.show_year,
+                show_seconds=self.c.show_seconds,
+                meta_attrs={"style": self.c.meta_style},
+                surround_left=self.c.surround_left,
+                surround_right=self.c.surround_right,
+                surround_attrs={"style": self.c.surround_style},
+                cursor_surround_left=self.c.cursor_surround_left,
+                cursor_surround_right=self.c.cursor_surround_right,
+                cursor_surround_attrs={"style": self.c.cursor_surround_style},
+                cursor_own_nick_attrs={"style":self.c.cursor_own_nick_style},
+                cursor_fill=self.c.cursor_fill_char,
+                cursor_fill_attrs={"style": self.c.cursor_fill_style},
+                nick_attrs={"style": self.c.nick_style},
+                own_nick_attrs={"style": self.c.own_nick_style},
+        )
 
     def _create_connecting_widget(self) -> Any:
         text = (
