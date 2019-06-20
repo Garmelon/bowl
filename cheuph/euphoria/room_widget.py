@@ -9,6 +9,7 @@ from ..cursor_rendering import CursorTreeRenderer
 from ..cursor_tree_widget import CursorTreeWidget
 from ..element import Message, RenderedMessage
 from ..element_supply import InMemorySupply
+from .euph_config import EuphConfig
 from ..markup import AT, AttributedText, Attributes
 from .edit_widgets import EditWidget
 from .euph_renderer import EuphRenderer
@@ -164,8 +165,11 @@ class RoomWidget(urwid.WidgetWrap):
 
     def __init__(self,
             roomname: str,
+            config: EuphConfig,
             log_amount: int = 200,
             ) -> None:
+
+        self.c = config
 
         if log_amount < 1:
             raise ValueError() # TODO add better text
@@ -226,7 +230,7 @@ class RoomWidget(urwid.WidgetWrap):
     def _create_connecting_widget(self) -> Any:
         text = (
                 AT("Connecting to ") +
-                AT("&" + self._room.name) +
+                AT("&" + self._room.name, style=self.c.room_style) +
                 AT("...")
         )
         # Centered vertically and horizontally
@@ -235,14 +239,17 @@ class RoomWidget(urwid.WidgetWrap):
     def _create_connection_failed_widget(self) -> Any:
         text = (
                 AT("Could not connect to ") +
-                AT("&" + self._room.name) +
+                AT("&" + self._room.name, style=self.c.room_style) +
                 AT("...")
         )
         # Centered vertically and horizontally
         return urwid.Filler(ATWidget(text, align=urwid.CENTER))
 
     def _create_room_name_widget(self) -> Any:
-        return urwid.Text("&" + self._room.name, align=urwid.CENTER)
+        return urwid.Text(
+                (self.c.room_style, "&" + self._room.name),
+                align=urwid.CENTER,
+        )
 
     def _create_tree_widget(self) -> Any:
         return CursorTreeWidget(self._tree)
