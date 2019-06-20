@@ -42,20 +42,20 @@ class TransparentConfig:
 # Special config reading and writing classes
 
 class Kind(Enum):
+    BOOL = auto()
+    DICT = auto()
+    FLOAT = auto()
     INT = auto()
     STR = auto()
-    FLOAT = auto()
     RAW = auto()
 
     def matches(self, value: Any) -> bool:
-        if self == self.INT:
-            return type(value) is int
-        elif self == self.STR:
-            return type(value) is str
-        elif self == self.FLOAT:
-            return type(value) is float
-        elif self == self.RAW:
-            return True
+        if   self == self.BOOL:  return type(value) is bool
+        elif self == self.DICT:  return type(value) is dict
+        elif self == self.FLOAT: return type(value) is float
+        elif self == self.INT:   return type(value) is int
+        elif self == self.STR:   return type(value) is str
+        elif self == self.RAW:   return True
 
         return False
 
@@ -78,8 +78,6 @@ class Option:
             if not condition(value):
                 raise ConfigValueException(error_message)
 
-T = TypeVar("T", bound=TransparentConfig)
-
 class TreeLoader:
 
     def __init__(self) -> None:
@@ -96,7 +94,7 @@ class TreeLoader:
 
         return config
 
-    def load_to(self, config: T, data: Any) -> T:
+    def load_to(self, config: TransparentConfig, data: Any) -> None:
         errors = []
 
         for name, option in self._options.items():
@@ -112,8 +110,6 @@ class TreeLoader:
 
         if errors:
             raise ConfigValueException(errors)
-        else:
-            return config
 
     @classmethod
     def export(cls, config: TransparentConfig) -> Any:
