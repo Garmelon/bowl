@@ -173,6 +173,7 @@ class RoomWidget(urwid.WidgetWrap):
 
         self._mode: str
         self._requesting_logs = False
+        self._hit_top_of_supply = False
 
         self._room = yaboli.Room(roomname)
         self._room.register_event("snapshot", self.on_snapshot)
@@ -210,6 +211,14 @@ class RoomWidget(urwid.WidgetWrap):
 
         super().__init__(self._connecting)
         self.switch_connecting()
+
+    # Creating the various parts of the layout.
+    #
+    # This is put into separate methods because the individual elements have a
+    # lot of parameters which are (to be) read from some sort of config system.
+    # Putting all of these into __init__() would be a mess.
+    #
+    # These functions use (or rather: will use) self._conf.
 
     def _create_euph_renderer(self) -> EuphRenderer:
         return EuphRenderer("")
@@ -255,7 +264,7 @@ class RoomWidget(urwid.WidgetWrap):
     def _create_edit_nick_widget(self) -> Any:
         return EditWidget("Choose a nick: ", "@")
 
-    # Start up the connection and room
+    ## Room life cycle
 
     @synchronous
     async def connect(self) -> None:
@@ -268,11 +277,11 @@ class RoomWidget(urwid.WidgetWrap):
 
     @synchronous
     async def disconnect(self) -> None:
-        self._room.disconnect()
+        await self._room.disconnect()
+        # TODO attach this to the room's disconnect event instead
+        urwid.emit_signal(self, "close")
 
-    # NEW, BETTER ORGANIZED ROOM WIDGET
-
-    # UI mode and mode switching
+    ## UI mode and mode switching
 
     CONNECTING = "connecting"
     CONNECTION_FAILED = "connection_failed"
@@ -360,7 +369,7 @@ class RoomWidget(urwid.WidgetWrap):
         self._tree.invalidate(msg.message_id)
         self.update_tree()
 
-    # Reacting to urwid stuff
+    ## Reacting to urwid stuff
 
     def render(self, size: Tuple[int, int], focus: bool) -> None:
         canvas = super().render(size, focus)
@@ -385,6 +394,8 @@ class RoomWidget(urwid.WidgetWrap):
             elif key == "r":
                 self._tree.invalidate_all()
                 self._tree_widget._invalidate()
+            elif key == "q":
+                self.disconnect()
             else:
                 return super().keypress(size, key)
 
@@ -419,6 +430,17 @@ class RoomWidget(urwid.WidgetWrap):
 
     ## Euph stuff
 
+    # Reacting to euph events
+
+    async def on_snapshot(self, messages: List[yaboli.Message]):
+        for message in messages:
+            self.receive_message(message)
+        self.update_tree()
+
+    async def on_send(self, message: yaboli.Message):
+        self.receive_message(message)
+        self.update_tree()
+
     # Euph actions
 
     @synchronous
@@ -440,17 +462,6 @@ class RoomWidget(urwid.WidgetWrap):
     @synchronous
     async def send(self, content: str, parent_id: Optional[str]):
         message = await self._room.send(content, parent_id=parent_id)
-        self.receive_message(message)
-        self.update_tree()
-
-    # Reacting to euph events
-
-    async def on_snapshot(self, messages: List[yaboli.Message]):
-        for message in messages:
-            self.receive_message(message)
-        self.update_tree()
-
-    async def on_send(self, message: yaboli.Message):
         self.receive_message(message)
         self.update_tree()
 
