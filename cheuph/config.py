@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
 __all__ = ["ConfigException", "ConfigValueException", "TransparentConfig",
         "Kind", "Condition", "Option", "TreeLoader"]
@@ -78,6 +78,8 @@ class Option:
             if not condition(value):
                 raise ConfigValueException(error_message)
 
+T = TypeVar("T", bound=TransparentConfig)
+
 class TreeLoader:
 
     def __init__(self) -> None:
@@ -94,8 +96,7 @@ class TreeLoader:
 
         return config
 
-    def load(self, data: Any) -> TransparentConfig:
-        config = TransparentConfig()
+    def load_to(self, config: T, data: Any) -> T:
         errors = []
 
         for name, option in self._options.items():
