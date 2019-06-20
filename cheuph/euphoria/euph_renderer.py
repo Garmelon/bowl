@@ -1,6 +1,8 @@
 import unicodedata
 from typing import Set
 
+import yaboli
+
 from ..cursor_rendering import CursorRenderer
 from ..element import Message, RenderedMessage
 from ..markup import AT, AttributedText, Attributes
@@ -110,9 +112,14 @@ class EuphRenderer(CursorRenderer):
     def render_element(self, message: Message, width: int) -> RenderedMessage:
         meta = self._render_meta(message)
 
+        if yaboli.similar(self.nick, message.nick):
+            nick_attrs = self._own_nick_attrs
+        else:
+            nick_attrs = self._nick_attrs
+
         left = AT(self._surround_left, attributes=self._surround_attrs)
         nick = AT(self._filter_unicode(message.nick),
-                attributes=self._nick_attrs) # TODO detect own nick
+                attributes=nick_attrs)
         right = AT(self._surround_right, attributes=self._surround_attrs)
 
         nick_str = left + nick + right + AT(" ")
