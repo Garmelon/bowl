@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
+from typing import (Any, Callable, Dict, Iterable, List, Optional, Tuple,
+                    TypeVar)
 
 __all__ = ["ConfigException", "ConfigValueException", "TransparentConfig",
         "Kind", "Condition", "Option", "TreeLoader"]
@@ -65,7 +66,7 @@ Condition = Callable[[Any], bool]
 class Option:
     kind: Kind
     default: Any
-    conditions: List[Tuple[Condition, str]] = field(default_factory=list)
+    conditions: Iterable[Tuple[Condition, str]] = field(default_factory=list)
 
     def check_valid(self, value: Any) -> None:
         if not self.kind.matches(value):
@@ -82,6 +83,16 @@ class TreeLoader:
 
     def __init__(self) -> None:
         self._options: Dict[str, Any] = {}
+
+    def add(self,
+            name: str,
+            kind: Kind,
+            default: Any,
+            *conditions: Tuple[Condition, str],
+            ) -> None:
+
+        option = Option(kind, default, conditions)
+        self.add_option(name, option)
 
     def add_option(self, name: str, option: Option) -> None:
         self._options[name] = option
