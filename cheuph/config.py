@@ -1,144 +1,155 @@
-# TODO define a config structure including config element descriptions and
-# default values
-#
-# TODO improve interface for accessing config values
-#
-# TODO load from and save to yaml file (only the values which differ from the
-# defaults or which were explicitly set)
+from dataclasses import dataclass, field
+from enum import Enum, auto
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from typing import Any, Dict
-
-__all__ = ["Fields", "Config", "ConfigView"]
-
-
-Fields = Dict[str, Any]
-
+__all__ = ["ConfigException", "ConfigValueException", "TransparentConfig",
+        "Kind", "Condition", "Option", "TreeLoader"]
 
 class ConfigException(Exception):
     pass
 
+class ConfigValueException(ConfigException):
+    pass
 
-class Config:
-    @staticmethod
-    def from_tree(tree: Any, prefix: str = "") -> Fields:
-        """
-        This function takes a nested dict using str-s as keys, and converts it
-        to a flat Fields dict. This means that an option's value can't be a
-        dict, and all dicts are expected to only use str-s as keys.
+class TransparentConfig:
 
-        It uses the '.' character as separator, so {"a":{"b": 1, "c": 2}}
-        becomes {"a.b": 1, "a.c": 2}.
-        """
+    def __init__(self, parent: Optional["TransparentConfig"] = None) -> None:
+        self.parent = parent
 
-        result: Fields = {}
-
-        for k, v in tree.items():
-            if not isinstance(k, str):
-                raise ConfigException("Keys must be strings")
-
-            if "." in k:
-                raise ConfigException("Keys may not contain the '.' character")
-
-            name = prefix + k
-
-            if isinstance(v, dict):
-                result.update(Config.from_tree(v, prefix=name+"."))
-            else:
-                result[name] = v
-
-        return result
-
-    @staticmethod
-    def to_tree(fields: Fields) -> Fields:
-        """
-        This function does the opposite of from_tree().
-
-        It uses the '.' character as separator, so {"a.b": 1, "a.c": 2}
-        becomes {"a":{"b": 1, "c": 2}}.
-        """
-
-        result: Any = {}
-
-        for k, v in fields.items():
-            steps = k.split(".")
-
-            subdict = result
-            for step in steps[:-1]:
-                new_subdict = subdict.get(step, {})
-                subdict[step] = new_subdict
-                subdict = new_subdict
-
-            subdict[steps[-1]] = v
-
-        return result
-
-    def __init__(self, default_fields: Fields = {}) -> None:
-        self.default_fields = default_fields
-        self.fields: Fields = {}
+        self._values: Dict[str, Any] = {}
 
     def __getitem__(self, key: str) -> Any:
-        value = self.fields.get(key)
-
-        if value is None:
-            value = self.default_fields.get(key)
-
-        if value is None:
-            raise ConfigException(f"No value for {key} found")
-
-        return value
+        return self.get(key)
 
     def __setitem__(self, key: str, value: Any) -> None:
-        if isinstance(value, dict):
-            raise ConfigException("No dicts allowed")
-        default = self.default_fields.get(key)
+        self.set(key, value)
 
-        if value == default:
-            if self.fields.get(key)is not None:
-                self.fields.pop(key)
+    def get(self, name: str) -> Any:
+        if name not in self._values:
+            if self.parent is None:
+                raise ConfigValueException(f"No such value: {name!r}")
+            else:
+                return self.parent.get(name)
+
+        return self._values.get(name)
+
+    def set(self, name: str, value: Any) -> None:
+        self._values[name] = value
+
+    def items(self) -> List[Tuple[str, Any]]:
+        return list(self._values.items())
+
+# Special config reading and writing classes
+
+class Kind(Enum):
+    INT = auto()
+    STR = auto()
+    FLOAT = auto()
+    RAW = auto()
+
+    def matches(self, value: Any) -> bool:
+        if self == self.INT:
+            return type(value) is int
+        elif self == self.STR:
+            return type(value) is str
+        elif self == self.FLOAT:
+            return type(value) is float
+        elif self == self.RAW:
+            return True
+
+        return False
+
+Condition = Callable[[Any], bool]
+
+@dataclass
+class Option:
+    kind: Kind
+    default: Any
+    conditions: List[Tuple[Condition, str]] = field(default_factory=list)
+
+    def check_valid(self, value: Any) -> None:
+        if not self.kind.matches(value):
+            raise ConfigValueException(f"value {value!r} does not match {self.kind}")
+
+        self.apply_conditions(value)
+
+    def apply_conditions(self, value: Any) -> None:
+        for condition, error_message in self.conditions:
+            if not condition(value):
+                raise ConfigValueException(error_message)
+
+class TreeLoader:
+
+    def __init__(self) -> None:
+        self._options: Dict[str, Any] = {}
+
+    def add_option(self, name: str, option: Option) -> None:
+        self._options[name] = option
+
+    def defaults(self) -> TransparentConfig:
+        config = TransparentConfig()
+
+        for name, option in self._options.items():
+            config[name] = option.default
+
+        return config
+
+    def load(self, data: Any) -> TransparentConfig:
+        config = TransparentConfig()
+        errors = []
+
+        for name, option in self._options.items():
+            value = self._get_from_dict(data, name)
+            if value is None: continue
+
+            try:
+                option.check_valid(value)
+            except ConfigValueException as e:
+                errors.append(f"{name}: {e}")
+            else:
+                config[name] = value
+
+        if errors:
+            raise ConfigValueException(errors)
         else:
-            self.fields[key] = value
+            return config
 
-    @property
-    def view(self) -> "ConfigView":
-        return ConfigView(self.tree)
+    @classmethod
+    def export(cls, config: TransparentConfig) -> Any:
+        tree: Any = {}
 
-    @property
-    def v(self) -> "ConfigView":
-        return self.view
+        for key, value in config.items():
+            cls._insert_into_dict(tree, key, value)
 
-    @property
-    def tree(self) -> Any:
-        both = dict(self.default_fields)
-        both.update(self.fields)
-        return self.to_tree(both)
+        return tree
 
+    @staticmethod
+    def _get_from_dict(d: Any, name: str) -> Optional[Any]:
+        path = name.split(".")
 
-class ConfigView:
-    def __init__(self,
-            fields: Any,
-            prefix: str = "",
-            ) -> None:
+        for segment in path:
+            if d is None or type(d) is not dict:
+                return None
 
-        self._fields = fields
-        self._prefix = prefix
+            d = d.get(segment)
 
-    def __getattr__(self, name: str) -> Any:
-        return self._get(name)
+        return d
 
-    def __getitem__(self, name: str) -> Any:
-        return self._get(name)
+    @staticmethod
+    def _insert_into_dict(d: Any, name: str, value: Any) -> None:
+        path = name.split(".")
+        if not path:
+            raise ConfigException(f"could not insert value for {name}")
 
-    def _get(self, name: str) -> Any:
-        """
-        This function assumes that _default_fields and _fields have the same
-        dict structure.
-        """
+        for segment in path[:-1]:
+            if type(d) is not dict:
+                raise ConfigException(f"could not insert value for {name}")
 
-        field = self._fields.get(name)
+            new_d = d.get(segment, {})
+            d[segment] = new_d
+            d = new_d
 
-        if isinstance(field, dict):
-            return ConfigView(field, f"{self._prefix}{name}.")
-        elif field is None:
-            raise ConfigException(f"Field {self._prefix}{name} does not exist")
+        if type(d) is not dict:
+            raise ConfigException(f"could not insert value for {name}")
 
-        return field
+        d[path[-1]] = value
