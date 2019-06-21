@@ -5,11 +5,11 @@
 import collections
 from typing import Any, Deque, Iterator, List, Optional, Set, Tuple
 
-from .markup import AT, AttributedText, Attributes
+from .markup import AT, Attributes
 
 __all__ = ["Line", "AttributedLines"]
 
-Line = Tuple[Attributes, AttributedText]
+Line = Tuple[Attributes, AT]
 
 class AttributedLines:
     """
@@ -49,7 +49,8 @@ class AttributedLines:
 
     def append_above(self,
             attributes: Attributes,
-            text: AttributedText) -> None:
+            text: AT,
+            ) -> None:
         """
         Append a line above all already existing lines. The existing lines'
         offsets do not change.
@@ -60,7 +61,8 @@ class AttributedLines:
 
     def append_below(self,
             attributes: Attributes,
-            text: AttributedText) -> None:
+            text: AT,
+            ) -> None:
         """
         Append a line below all already existing lines. The existing lines'
         offsets do not change.
@@ -133,7 +135,7 @@ class AttributedLines:
             horizontal_offset: int,
             offset_char: str = " ",
             overlap_char: str = "…",
-            ) -> AttributedText:
+            ) -> AT:
         """
         Renders a single line to a specified width with a specified horizontal
         offset, applying all line-wide attributes to the result. The length of
@@ -152,7 +154,7 @@ class AttributedLines:
         start_offset = horizontal_offset
         end_offset = start_offset + text_width
 
-        result: AttributedText = AT()
+        result: AT = AT()
 
         if start_offset < 0:
             pad_length = min(text_width, -start_offset)
@@ -189,7 +191,7 @@ class AttributedLines:
             width: int,
             height: int,
             horizontal_offset: int,
-            ) -> List[AttributedText]:
+            ) -> List[AT]:
         """
         Renders all lines individually.
         """
@@ -205,7 +207,7 @@ class AttributedLines:
             width: int,
             height: int,
             horizontal_offset: int,
-            ) -> AttributedText:
+            ) -> AT:
         """
         Renders all lines and combines them into a single AttributedText by
         joining them with a newline.

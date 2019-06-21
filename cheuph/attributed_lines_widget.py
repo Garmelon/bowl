@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 import urwid
 
 from .attributed_lines import AttributedLines
-from .attributed_text_widget import AttributedTextWidget
+from .attributed_text_widget import ATWidget
 from .markup import AT
 
 __all__ = ["AttributedLinesWidget"]
@@ -17,7 +17,7 @@ class AttributedLinesWidget(urwid.WidgetWrap):
     """
 
     def __init__(self, lines: Optional[AttributedLines] = None) -> None:
-        self._text = AttributedTextWidget(AT())
+        self._text = ATWidget(AT())
         self._filler = urwid.Filler(self._text, valign=urwid.TOP)
         super().__init__(self._filler)
 

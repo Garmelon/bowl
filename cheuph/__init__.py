@@ -15,7 +15,6 @@ from .utils import *
 
 __all__: List[str] = []
 
-
 __all__ += attributed_lines.__all__
 __all__ += attributed_lines_widget.__all__
 __all__ += attributed_text_widget.__all__

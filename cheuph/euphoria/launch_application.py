@@ -57,8 +57,8 @@ def load_config(args: Any) -> EuphConfig:
 
     return config
 
-def export_defaults(path: str) -> None:
-    path = pathlib.Path(path).expanduser()
+def export_defaults(path_str: str) -> None:
+    path = pathlib.Path(path_str).expanduser()
     print(f"Exporting default config to {path}")
 
     loader = EuphLoader()

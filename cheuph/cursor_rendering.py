@@ -7,7 +7,7 @@ from .attributed_lines import AttributedLines
 from .element import Element, Id, Message, RenderedElement, RenderedMessage
 from .element_supply import ElementSupply
 from .exceptions import ShouldNeverHappen
-from .markup import AT, AttributedText, Attributes
+from .markup import AT, Attributes
 from .rendered_element_cache import RenderedElementCache
 
 __all__ = ["CursorRenderer", "CursorTreeRenderer", "BasicCursorRenderer"]
@@ -28,7 +28,7 @@ class CursorRenderer(ABC, Generic[E, R]):
         pass
 
     @abstractmethod
-    def render_cursor(self, width: int) -> AttributedText:
+    def render_cursor(self, width: int) -> AT:
         pass
 
 class CursorTreeRenderer(Generic[E]):
@@ -157,7 +157,7 @@ class CursorTreeRenderer(Generic[E]):
 
     def _render_message(self,
             message_id: Id,
-            indent: AttributedText,
+            indent: AT,
             ) -> AttributedLines:
 
         width = self._width - len(indent) - self._renderer.meta_width - 1
@@ -175,9 +175,7 @@ class CursorTreeRenderer(Generic[E]):
 
         return lines
 
-    def _render_cursor(self,
-            indent: AttributedText = AT(),
-            ) -> AttributedLines:
+    def _render_cursor(self, indent: AT = AT(),) -> AttributedLines:
         lines = AttributedLines()
         width = self._width - len(indent) - self._renderer.meta_width - 1
         meta_spaces = AT(" " * self._renderer.meta_width)
@@ -189,7 +187,7 @@ class CursorTreeRenderer(Generic[E]):
     def _render_indent(self,
             cursor: bool = False,
             cursor_line: bool = False,
-            ) -> AttributedText:
+            ) -> AT:
 
         if self._indent_width < 1:
             return AT()
@@ -215,7 +213,7 @@ class CursorTreeRenderer(Generic[E]):
     def _render_subtree(self,
             lines: AttributedLines,
             root_id: Id,
-            indent: AttributedText = AT(),
+            indent: AT = AT(),
             ) -> None:
 
         if self._anchor_id == root_id:
@@ -635,5 +633,5 @@ class BasicCursorRenderer(CursorRenderer):
 
         return RenderedMessage(message.id, lines, meta)
 
-    def render_cursor(self, width: int) -> AttributedText:
+    def render_cursor(self, width: int) -> AT:
         return AT("<cursor>")

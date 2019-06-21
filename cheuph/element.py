@@ -1,7 +1,7 @@
 import datetime
 from typing import Hashable, List, Optional
 
-from .markup import AttributedText
+from .markup import AT
 
 __all__ = ["Id", "Element", "RenderedElement", "Message", "RenderedMessage"]
 
@@ -26,10 +26,8 @@ class Element:
         return self._parent_id
 
 class RenderedElement:
-    def __init__(self,
-            id: Id,
-            lines: List[AttributedText],
-            ) -> None:
+
+    def __init__(self, id: Id, lines: List[AT]) -> None:
 
         self._id = id
         self._lines = lines
@@ -39,7 +37,7 @@ class RenderedElement:
         return self._id
 
     @property
-    def lines(self) -> List[AttributedText]:
+    def lines(self) -> List[AT]:
         return self._lines
 
 class Message(Element):
@@ -71,15 +69,10 @@ class Message(Element):
 
 class RenderedMessage(RenderedElement):
 
-    def __init__(self,
-            id: Id,
-            lines: List[AttributedText],
-            meta: AttributedText,
-            ) -> None:
-
+    def __init__(self, id: Id, lines: List[AT], meta: AT) -> None:
         super().__init__(id, lines)
         self._meta = meta
 
     @property
-    def meta(self) -> AttributedText:
+    def meta(self) -> AT:
         return self._meta

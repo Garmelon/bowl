@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import (Any, Callable, Dict, Iterable, List, Optional, Tuple,
-                    TypeVar)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 __all__ = ["ConfigException", "ConfigValueException", "TransparentConfig",
         "Kind", "Condition", "Option", "TreeLoader"]
@@ -43,6 +42,7 @@ class TransparentConfig:
 # Special config reading and writing classes
 
 class Kind(Enum):
+
     BOOL = auto()
     DICT = auto()
     FLOAT = auto()
@@ -64,13 +64,15 @@ Condition = Callable[[Any], bool]
 
 @dataclass
 class Option:
+
     kind: Kind
     default: Any
     conditions: Iterable[Tuple[Condition, str]] = field(default_factory=list)
 
     def check_valid(self, value: Any) -> None:
         if not self.kind.matches(value):
-            raise ConfigValueException(f"value {value!r} does not match {self.kind}")
+            raise ConfigValueException(
+                    f"value {value!r} does not match {self.kind}")
 
         self.apply_conditions(value)
 

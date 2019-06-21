@@ -1,7 +1,6 @@
-from typing import Any, Dict, List, Optional, Set, TypeVar
+from typing import Any, Dict, List, Optional, Set
 
-from ..config import (ConfigValueException, Kind, Option, TransparentConfig,
-                      TreeLoader)
+from ..config import ConfigValueException, Kind, TransparentConfig, TreeLoader
 
 __all__ = ["EuphConfig", "EuphLoader"]
 

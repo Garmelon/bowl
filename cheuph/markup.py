@@ -32,10 +32,7 @@ class Chunk:
 
     # Common special methods
 
-    def __init__(self,
-            text: str,
-            attributes: Attributes = {},
-            ) -> None:
+    def __init__(self, text: str, attributes: Attributes = {}) -> None:
         self._text = text
         self._attributes = dict(attributes)
 
@@ -51,7 +48,8 @@ class Chunk:
         if not isinstance(other, Chunk):
             return NotImplemented
 
-        return self._text == other._text and self._attributes == other._attributes
+        return (self._text == other._text and
+                self._attributes == other._attributes)
 
     def __getitem__(self, key: Union[int, slice]) -> "Chunk":
         return Chunk(self.text[key], self._attributes)
@@ -247,9 +245,13 @@ class AttributedText:
             name: str,
             default: Any = None,
             ) -> Any:
+
         return self._at(pos).get(name, default)
 
-    def split_by(self, attribute_name: str) -> List[Tuple["AttributedText", Any]]:
+    def split_by(self,
+            attribute_name: str,
+            ) -> List[Tuple["AttributedText", Any]]:
+
         blocks = []
 
         chunks: List[Chunk] = []
@@ -297,6 +299,7 @@ class AttributedText:
             start: Optional[int] = None,
             stop: Optional[int] = None,
             ) -> "AttributedText":
+
         if start is None and stop is None:
             chunks = (chunk.set(name, value) for chunk in self._chunks)
             return AttributedText.from_chunks(chunks)
@@ -319,6 +322,7 @@ class AttributedText:
             start: Optional[int] = None,
             stop: Optional[int] = None,
             ) -> "AttributedText":
+
         if start is None and stop is None:
             chunks = (chunk.remove(name) for chunk in self._chunks)
             return AttributedText.from_chunks(chunks)

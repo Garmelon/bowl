@@ -2,7 +2,7 @@ from typing import Any, List, Tuple, Union
 
 import urwid
 
-from .markup import AttributedText
+from .markup import AT
 
 __all__ = ["AttributedTextWidget", "ATWidget"]
 
@@ -15,9 +15,9 @@ class AttributedTextWidget(urwid.Text):
     """
 
     def __init__(self,
-            text: AttributedText,
+            text: AT,
             *args: Any,
-            **kwargs: Any
+            **kwargs: Any,
             ) -> None:
         """
         text - an AttributedText object
@@ -30,9 +30,7 @@ class AttributedTextWidget(urwid.Text):
         super().__init__(self._convert_to_markup(text), *args, **kwargs)
 
     @staticmethod
-    def _convert_to_markup(text: AttributedText
-            ) -> List[Union[str, Tuple[str, str]]]:
-
+    def _convert_to_markup(text: AT) -> List[Union[str, Tuple[str, str]]]:
         # Wonder why mypy can't figure out the type signature of markup on its
         # own... :P
         markup: List[Union[str, Tuple[str, str]]]
@@ -43,7 +41,7 @@ class AttributedTextWidget(urwid.Text):
 
         return markup or [""]
 
-    def set_attributed_text(self, text: AttributedText) -> None:
+    def set_attributed_text(self, text: AT) -> None:
         """
         Set the content of the AttributedTextWidget.
         """
@@ -51,7 +49,7 @@ class AttributedTextWidget(urwid.Text):
         self._attributed_text = text
         super().set_text(self._convert_to_markup(text))
 
-    def get_attributed_text(self) -> AttributedText:
+    def get_attributed_text(self) -> AT:
         """
         Returns the currently used AttributedText.
 
@@ -63,7 +61,7 @@ class AttributedTextWidget(urwid.Text):
         return self._attributed_text
 
     @property
-    def attributed_text(self) -> AttributedText:
+    def attributed_text(self) -> AT:
         return self.get_attributed_text()
 
 ATWidget = AttributedTextWidget

@@ -1,16 +1,12 @@
-import asyncio
-import logging
-from pathlib import Path
 from typing import Any, Optional
 
 import urwid
-import yaml
 
 from ..attributed_text_widget import ATWidget
-from ..markup import AT, Attributes
+from ..markup import AT
 from .edit_widgets import EditWidget
+from .euph_config import EuphConfig
 from .launch_application import launch
-from .euph_config import EuphConfig, EuphLoader
 from .room_widget import RoomWidget
 
 __all__ = ["SingleRoomApplication", "launch_single_room_application"]
@@ -67,7 +63,7 @@ class ChooseRoomWidget(urwid.WidgetWrap):
         self.set_error(ATWidget(text, align=urwid.CENTER))
 
 class SingleRoomApplication(urwid.WidgetWrap):
-    #
+
     # The characters in the ALPHABET make up the characters that are allowed in
     # room names.
     ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -130,5 +126,5 @@ class SingleRoomApplication(urwid.WidgetWrap):
 
         return key
 
-def launch_single_room_application():
+def launch_single_room_application() -> None:
     launch(SingleRoomApplication)
