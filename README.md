@@ -9,7 +9,7 @@ Ensure that you have at least Python 3.7 installed.
 To install **bowl** or update your installation to the latest version, run the
 following command wherever you want to install or have installed **bowl**:
 ```
-$ pip install git+https://github.com/Garmelon/bowl@v0.0.1
+$ pip install git+https://github.com/Garmelon/bowl@v1.0.0
 ```
 
 The use of [venv](https://docs.python.org/3/library/venv.html) is recommended.
@@ -31,7 +31,7 @@ $ . bin/activate
 
 Then, install **bowl**.
 ```
-$ pip install git+https://github.com/Garmelon/bowl@v0.0.1
+$ pip install git+https://github.com/Garmelon/bowl@v1.0.0
 ```
 
 Create a config file containing all default values in the default config file

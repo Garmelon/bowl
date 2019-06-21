@@ -2,6 +2,10 @@
 
 ## Next version
 
+Nothing yet
+
+## 1.0.0 (2019-06-21)
+
 - Add a readme
 - Add ability to connect as human
 - Add cookie support
@@ -11,6 +15,6 @@
 - Fix fetching old logs
 - Rename project from "cheuph" to "bowl"
 
-## 0.1.0 (2019-04-12)
+## 0.1.0 (2019-06-21)
 
 - Use setuptools
