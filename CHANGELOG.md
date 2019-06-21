@@ -2,6 +2,7 @@
 
 ## Next version
 
+- Add nick list
 - Rename project from "cheuph" to "bowl"
 - Clean up code
 
