@@ -2,6 +2,7 @@
 
 ## Next version
 
+- Add a readme
 - Add ability to connect as human
 - Add cookie support
 - Add nick list
