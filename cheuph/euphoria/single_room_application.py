@@ -9,6 +9,7 @@ import yaml
 from ..attributed_text_widget import ATWidget
 from ..markup import AT, Attributes
 from .edit_widgets import EditWidget
+from .launch_application import launch
 from .euph_config import EuphConfig, EuphLoader
 from .room_widget import RoomWidget
 
@@ -129,31 +130,5 @@ class SingleRoomApplication(urwid.WidgetWrap):
 
         return key
 
-def run_single_room_application(config_file: Path) -> None:
-    logging.disable()
-
-    config_yaml: Any
-    try:
-        with open(config_file) as f:
-            config_yaml = yaml.load(f.read(), Loader=yaml.SafeLoader)
-    except FileNotFoundError:
-        config_yaml = {}
-
-    loader = EuphLoader()
-    defaults = loader.defaults()
-    config = EuphConfig(defaults)
-    loader.load_to(config, config_yaml)
-
-    loop = asyncio.get_event_loop()
-
-    main_loop = urwid.MainLoop(
-        SingleRoomApplication(config),
-        event_loop=urwid.AsyncioEventLoop(loop=loop),
-        palette=config.palette,
-    )
-
-    main_loop.run()
-
 if __name__ == "__main__":
-    config_path = Path("~/.cheuph.conf").expanduser()
-    run_single_room_application(config_path)
+    launch(SingleRoomApplication)
