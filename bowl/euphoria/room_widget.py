@@ -1,4 +1,5 @@
 import asyncio
+import pathlib
 from enum import Enum
 from typing import Any, Awaitable, Callable, List, Optional, Tuple, TypeVar
 
@@ -186,7 +187,19 @@ class RoomWidget(urwid.WidgetWrap):
         self._requesting_logs = False
         self._hit_top_of_supply = False
 
-        self._room = yaboli.Room(roomname)
+        url_format = yaboli.Room.URL_FORMAT
+        if self.c.human:
+            url_format += "?h=1"
+
+        cookie_file = self.c.cookie_file
+        if cookie_file is not None:
+            cookie_file = str(pathlib.Path(cookie_file).expanduser())
+
+        self._room = yaboli.Room(
+                roomname,
+                url_format=url_format,
+                cookie_file=cookie_file,
+        )
 
         self._room.register_event("connected", self.on_connected)
         self._room.register_event("snapshot", self.on_snapshot)
@@ -506,6 +519,7 @@ class RoomWidget(urwid.WidgetWrap):
         for message in messages:
             self.receive_message(message)
 
+        self.change_own_nick()
         self.update_nick_list()
 
     async def on_send(self, message: yaboli.LiveMessage) -> None:
@@ -549,8 +563,11 @@ class RoomWidget(urwid.WidgetWrap):
 
     @synchronous
     async def nick(self, nick: str) -> None:
-        await self._room.nick(nick)
-        self.change_own_nick()
+        try:
+            await self._room.nick(nick)
+            self.change_own_nick()
+        except yaboli.EuphException:
+            pass
 
     @synchronous
     async def send(self, content: str, parent_id: Optional[str]) -> None:

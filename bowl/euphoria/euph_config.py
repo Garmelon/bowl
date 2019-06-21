@@ -9,6 +9,16 @@ class EuphConfig(TransparentConfig):
     def __init__(self, parent: Optional[TransparentConfig] = None) -> None:
         super().__init__(parent)
 
+    # behavior
+
+    @property
+    def cookie_file(self) -> Optional[str]:
+        return self["behavior.cookie_file"]
+
+    @property
+    def human(self) -> bool:
+        return self["behavior.human"]
+
     # basic styles
 
     @property
@@ -204,11 +214,17 @@ class EuphLoader(TreeLoader):
     SINGLE_CHAR = (lambda x: len(x) == 1, "must be single character")
     AT_LEAST_0 = (lambda x: x >= 0, "must be at least 0")
     AT_LEAST_1 = (lambda x: x >= 1, "must be at least 1")
+    OPTIONAL_STR = (lambda x: x is None or type(x) is str,
+            "must be a string or empty")
 
     def __init__(self) -> None:
         super().__init__()
 
         self._styles: Set[str] = set()
+
+        # behavior
+        self.add("behavior.cookie_file", Kind.RAW, None, self.OPTIONAL_STR)
+        self.add("behavior.human", Kind.BOOL, True)
 
         # basic styles
         self.add_style("visual.room_style", "room")

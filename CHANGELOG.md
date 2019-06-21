@@ -2,6 +2,8 @@
 
 ## Next version
 
+- Add ability to connect as human
+- Add cookie support
 - Add nick list
 - Clean up code
 - Fix crash on "Choose a room" screen
