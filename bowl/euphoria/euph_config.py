@@ -167,6 +167,16 @@ class EuphConfig(TransparentConfig):
     def borders_style(self) -> str:
         return self["visual.borders.style"]
 
+    # nick list
+
+    @property
+    def nick_list_heading_style(self) -> str:
+        return self["visual.nick_list.heading_style"]
+
+    @property
+    def nick_list_counter_style(self) -> str:
+        return self["visual.nick_list.counter_style"]
+
     # other
 
     @property
@@ -261,6 +271,10 @@ class EuphLoader(TreeLoader):
         self.add("visual.borders.edit_separator", Kind.STR, "─",
                 self.SINGLE_CHAR)
         self.add_style("visual.borders.style", "gray")
+
+        # nick list
+        self.add_style("visual.nick_list.heading_style", "bold")
+        self.add_style("visual.nick_list.counter_style", "gray")
 
         # other
         self.add("styles", Kind.DICT, self.DEFAULT_STYLES)
