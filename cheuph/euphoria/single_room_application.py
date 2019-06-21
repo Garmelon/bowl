@@ -13,7 +13,7 @@ from .launch_application import launch
 from .euph_config import EuphConfig, EuphLoader
 from .room_widget import RoomWidget
 
-__all__ = ["SingleRoomApplication"]
+__all__ = ["SingleRoomApplication", "launch_single_room_application"]
 
 class ChooseRoomWidget(urwid.WidgetWrap):
 
@@ -130,5 +130,5 @@ class SingleRoomApplication(urwid.WidgetWrap):
 
         return key
 
-if __name__ == "__main__":
+def launch_single_room_application():
     launch(SingleRoomApplication)
