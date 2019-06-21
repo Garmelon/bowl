@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional, Set, TypeVar
 
 from ..config import (ConfigValueException, Kind, Option, TransparentConfig,
                       TreeLoader)
@@ -9,6 +9,8 @@ class EuphConfig(TransparentConfig):
 
     def __init__(self, parent: Optional[TransparentConfig] = None) -> None:
         super().__init__(parent)
+
+    # basic styles
 
     @property
     def room_style(self) -> str:
@@ -84,6 +86,46 @@ class EuphConfig(TransparentConfig):
     def cursor_fill_style(self) -> str:
         return self["visual.cursor.fill.style"]
 
+    # indent
+
+    @property
+    def indent_width(self) -> int:
+        return self["visual.indent.width"]
+
+    @property
+    def indent_char(self) -> str:
+        return self["visual.indent.char"]
+
+    @property
+    def indent_fill(self) -> str:
+        return self["visual.indent.fill"]
+
+    @property
+    def indent_style(self) -> str:
+        return self["visual.indent.style"]
+
+    @property
+    def indent_cursor_char(self) -> str:
+        return self["visual.indent.cursor.char"]
+
+    @property
+    def indent_cursor_corner(self) -> str:
+        return self["visual.indent.cursor.corner"]
+
+    @property
+    def indent_cursor_fill(self) -> str:
+        return self["visual.indent.cursor.fill"]
+
+    @property
+    def indent_cursor_style(self) -> str:
+        return self["visual.indent.cursor.style"]
+
+    # other
+
+    @property
+    def scrolloff(self) -> int:
+        return self["visual.scrolloff"]
+
     @property
     def palette(self) -> Any:
         return self["palette"]
@@ -95,6 +137,8 @@ class EuphLoader(TreeLoader):
             "bold": {"fg": "bold"},
             "gray": {"fg": "dark gray"},
 
+            "cursor": {"fg": "bold, light green"},
+
             "room": {"fg": "bold, light blue"},
             "nick": {"fg": "light cyan"},
             "own_nick": {"fg": "yellow"},
@@ -105,12 +149,15 @@ class EuphLoader(TreeLoader):
 
     # Various conditions
     SINGLE_CHAR = (lambda x: len(x) == 1, "must be single character")
+    AT_LEAST_0 = (lambda x: x >= 0, "must be at least 0")
+    AT_LEAST_1 = (lambda x: x >= 1, "must be at least 1")
 
     def __init__(self) -> None:
         super().__init__()
 
         self._styles: Set[str] = set()
 
+        # basic styles
         self.add_style("visual.room_style", "room")
         self.add_style("visual.nick_style", "nick")
         self.add_style("visual.own_nick_style", "own_nick")
@@ -124,17 +171,30 @@ class EuphLoader(TreeLoader):
         self.add_style("visual.meta.style", "none")
 
         # surround
-        self.add("visual.surround.left", Kind.STR, "[", [self.SINGLE_CHAR])
-        self.add("visual.surround.right", Kind.STR, "]", [self.SINGLE_CHAR])
-        self.add_style("visual.surround.style", "none")
+        self.add("visual.surround.left", Kind.STR, "[", self.SINGLE_CHAR)
+        self.add("visual.surround.right", Kind.STR, "]", self.SINGLE_CHAR)
+        self.add_style("visual.surround.style", "bold")
 
         # cursor
-        self.add("visual.cursor.surround.left", Kind.STR, "<", [self.SINGLE_CHAR])
-        self.add("visual.cursor.surround.right", Kind.STR, ">", [self.SINGLE_CHAR])
-        self.add_style("visual.cursor.surround.style", "none")
-        self.add_style("visual.cursor.own_nick_style", "own_nick")
-        self.add("visual.cursor.fill.char", Kind.STR, " ", [self.SINGLE_CHAR])
+        self.add("visual.cursor.surround.left", Kind.STR, "<", self.SINGLE_CHAR)
+        self.add("visual.cursor.surround.right", Kind.STR, ">", self.SINGLE_CHAR)
+        self.add_style("visual.cursor.surround.style", "cursor")
+        self.add_style("visual.cursor.own_nick_style", "cursor")
+        self.add("visual.cursor.fill.char", Kind.STR, " ", self.SINGLE_CHAR)
         self.add_style("visual.cursor.fill.style", "none")
+
+        # indent
+        self.add("visual.indent.width", Kind.INT, 2, self.AT_LEAST_1)
+        self.add("visual.indent.char", Kind.STR, "│", self.SINGLE_CHAR)
+        self.add("visual.indent.fill", Kind.STR, " ", self.SINGLE_CHAR)
+        self.add_style("visual.indent.style", "gray")
+        self.add("visual.indent.cursor.char", Kind.STR, "┃", self.SINGLE_CHAR)
+        self.add("visual.indent.cursor.corner", Kind.STR, "┗", self.SINGLE_CHAR)
+        self.add("visual.indent.cursor.fill", Kind.STR, "━", self.SINGLE_CHAR)
+        self.add_style("visual.indent.cursor.style", "cursor")
+
+        # other
+        self.add("visual.scrolloff", Kind.INT, 3, self.AT_LEAST_0)
 
         self.add("styles", Kind.DICT, self.DEFAULT_STYLES)
 

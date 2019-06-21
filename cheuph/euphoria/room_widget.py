@@ -2,16 +2,17 @@ import asyncio
 from typing import Any, Awaitable, Callable, List, Optional, Tuple, TypeVar
 
 import urwid
+
 import yaboli
 
 from ..attributed_text_widget import ATWidget
-from ..cursor_rendering import CursorTreeRenderer
+from ..cursor_rendering import CursorRenderer, CursorTreeRenderer
 from ..cursor_tree_widget import CursorTreeWidget
 from ..element import Message, RenderedMessage
-from ..element_supply import InMemorySupply
-from .euph_config import EuphConfig
+from ..element_supply import ElementSupply, InMemorySupply
 from ..markup import AT, AttributedText, Attributes
 from .edit_widgets import EditWidget
+from .euph_config import EuphConfig
 from .euph_renderer import EuphRenderer
 
 __all__ = ["RoomWidget"]
@@ -185,7 +186,8 @@ class RoomWidget(urwid.WidgetWrap):
 
         self._supply = InMemorySupply[Message]()
         self._renderer = self._create_euph_renderer()
-        self._tree = CursorTreeRenderer[Message](self._supply, self._renderer)
+        self._tree = self._create_cursor_tree_renderer(self._supply,
+                self._renderer)
 
         # All of the widgets
 
@@ -241,6 +243,23 @@ class RoomWidget(urwid.WidgetWrap):
                 cursor_fill_attrs={"style": self.c.cursor_fill_style},
                 nick_attrs={"style": self.c.nick_style},
                 own_nick_attrs={"style": self.c.own_nick_style},
+        )
+
+    def _create_cursor_tree_renderer(self,
+            supply: ElementSupply,
+            renderer: CursorRenderer,
+            ) -> CursorTreeRenderer:
+
+        return CursorTreeRenderer(supply, renderer,
+                indent_width=self.c.indent_width,
+                indent=self.c.indent_char,
+                indent_fill=self.c.indent_fill,
+                indent_attrs={"style": self.c.indent_style},
+                cursor_indent=self.c.indent_cursor_char,
+                cursor_corner=self.c.indent_cursor_corner,
+                cursor_fill=self.c.indent_cursor_fill,
+                cursor_indent_attrs={"style": self.c.indent_cursor_style},
+                scrolloff=self.c.scrolloff,
         )
 
     def _create_connecting_widget(self) -> Any:
