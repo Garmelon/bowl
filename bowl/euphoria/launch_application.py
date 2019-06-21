@@ -12,12 +12,12 @@ from .euph_config import EuphConfig, EuphLoader
 __all__ = ["DEFAULT_CONFIG_PATHS", "launch"]
 
 DEFAULT_CONFIG_PATHS = [
-        "~/.config/cheuph/cheuph.yaml",
-        "~/.cheuph/cheuph.yaml",
-        "~/.cheuph.yaml",
+        "~/.config/bowl/bowl.yaml",
+        "~/.bowl/bowl.yaml",
+        "~/.bowl.yaml",
 ]
 
-GITHUB_URL = "https://github.com/Garmelon/cheuph"
+GITHUB_URL = "https://github.com/Garmelon/bowl"
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(

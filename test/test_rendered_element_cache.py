@@ -1,6 +1,6 @@
 import unittest
 
-from cheuph import Element, RenderedElementCache
+from bowl import Element, RenderedElementCache
 
 __all__ = ["TestRenderedElementCache"]
 

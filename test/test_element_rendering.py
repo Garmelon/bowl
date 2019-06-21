@@ -1,14 +1,14 @@
 import unittest
 
-import cheuph
+from bowl import CursorTreeRenderer
 
 __all__ = ["TestCursorTreeRenderer"]
 
 class TestCursorTreeRenderer(unittest.TestCase):
 
     def test_static_offset(self):
-        gao = cheuph.CursorTreeRenderer.get_absolute_offset
-        gro = cheuph.CursorTreeRenderer.get_relative_offset
+        gao = CursorTreeRenderer.get_absolute_offset
+        gro = CursorTreeRenderer.get_relative_offset
 
         self.assertEqual(0, gao(0.0, 6))
         self.assertEqual(1, gao(0.2, 6))

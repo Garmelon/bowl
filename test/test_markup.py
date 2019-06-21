@@ -1,6 +1,6 @@
 import unittest
 
-from cheuph import AT
+from bowl import AT
 
 __all__ = ["TestAttributedText"]
 

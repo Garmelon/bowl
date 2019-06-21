@@ -1,15 +1,15 @@
 from setuptools import setup
 
 setup(
-        name="cheuph",
+        name="bowl",
         version="0.0.1",
         packages=[
-            "cheuph",
-            "cheuph.euphoria",
+            "bowl",
+            "bowl.euphoria",
         ],
         entry_points={
             "console_scripts": [
-                "cheuph = cheuph.euphoria:launch_single_room_application",
+                "bowl = bowl.euphoria:launch_single_room_application",
             ],
         },
         install_requires=[
