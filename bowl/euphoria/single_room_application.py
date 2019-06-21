@@ -59,7 +59,7 @@ class ChooseRoomWidget(urwid.WidgetWrap):
 
     def invalid_room_name(self, reason: str) -> None:
         text = AT(f"Invalid room name: {reason}\n",
-                attributes=self._error_attrs)
+                style=self._error_style)
         self.set_error(ATWidget(text, align=urwid.CENTER))
 
 class SingleRoomApplication(urwid.WidgetWrap):
