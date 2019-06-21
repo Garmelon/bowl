@@ -60,32 +60,6 @@ class EuphConfig(TransparentConfig):
     def surround_style(self) -> str:
         return self["visual.surround.style"]
 
-    # cursor
-
-    @property
-    def cursor_surround_left(self) -> str:
-        return self["visual.cursor.surround.left"]
-
-    @property
-    def cursor_surround_right(self) -> str:
-        return self["visual.cursor.surround.right"]
-
-    @property
-    def cursor_surround_style(self) -> str:
-        return self["visual.cursor.surround.style"]
-
-    @property
-    def cursor_own_nick_style(self) -> str:
-        return self["visual.cursor.own_nick_style"]
-
-    @property
-    def cursor_fill_char(self) -> str:
-        return self["visual.cursor.fill.char"]
-
-    @property
-    def cursor_fill_style(self) -> str:
-        return self["visual.cursor.fill.style"]
-
     # indent
 
     @property
@@ -104,21 +78,51 @@ class EuphConfig(TransparentConfig):
     def indent_style(self) -> str:
         return self["visual.indent.style"]
 
+    # cursor
+
+    @property
+    def cursor_own_nick_style(self) -> str:
+        return self["visual.cursor.own_nick_style"]
+
+    @property
+    def cursor_fill_char(self) -> str:
+        return self["visual.cursor.fill.char"]
+
+    @property
+    def cursor_fill_style(self) -> str:
+        return self["visual.cursor.fill.style"]
+
+    # cursor.surround
+
+    @property
+    def cursor_surround_left(self) -> str:
+        return self["visual.cursor.surround.left"]
+
+    @property
+    def cursor_surround_right(self) -> str:
+        return self["visual.cursor.surround.right"]
+
+    @property
+    def cursor_surround_style(self) -> str:
+        return self["visual.cursor.surround.style"]
+
+    # cursor.indent
+
     @property
     def indent_cursor_char(self) -> str:
-        return self["visual.indent.cursor.char"]
+        return self["visual.cursor.indent.char"]
 
     @property
     def indent_cursor_corner(self) -> str:
-        return self["visual.indent.cursor.corner"]
+        return self["visual.cursor.indent.corner"]
 
     @property
     def indent_cursor_fill(self) -> str:
-        return self["visual.indent.cursor.fill"]
+        return self["visual.cursor.indent.fill"]
 
     @property
     def indent_cursor_style(self) -> str:
-        return self["visual.indent.cursor.style"]
+        return self["visual.cursor.indent.style"]
 
     # scroll
 
@@ -215,26 +219,30 @@ class EuphLoader(TreeLoader):
         self.add("visual.surround.right", Kind.STR, "]", self.SINGLE_CHAR)
         self.add_style("visual.surround.style", "bold")
 
-        # cursor
-        self.add("visual.cursor.surround.left", Kind.STR, "<",
-                self.SINGLE_CHAR)
-        self.add("visual.cursor.surround.right", Kind.STR, ">",
-                self.SINGLE_CHAR)
-        self.add_style("visual.cursor.surround.style", "cursor")
-        self.add_style("visual.cursor.own_nick_style", "cursor")
-        self.add("visual.cursor.fill.char", Kind.STR, " ", self.SINGLE_CHAR)
-        self.add_style("visual.cursor.fill.style", "none")
-
         # indent
         self.add("visual.indent.width", Kind.INT, 2, self.AT_LEAST_1)
         self.add("visual.indent.char", Kind.STR, "│", self.SINGLE_CHAR)
         self.add("visual.indent.fill", Kind.STR, " ", self.SINGLE_CHAR)
         self.add_style("visual.indent.style", "gray")
-        self.add("visual.indent.cursor.char", Kind.STR, "┃", self.SINGLE_CHAR)
-        self.add("visual.indent.cursor.corner", Kind.STR, "┗",
+
+        # cursor
+        self.add_style("visual.cursor.own_nick_style", "cursor")
+        self.add("visual.cursor.fill.char", Kind.STR, " ", self.SINGLE_CHAR)
+        self.add_style("visual.cursor.fill.style", "none")
+
+        # cursor.surround
+        self.add("visual.cursor.surround.left", Kind.STR, "<",
                 self.SINGLE_CHAR)
-        self.add("visual.indent.cursor.fill", Kind.STR, "━", self.SINGLE_CHAR)
-        self.add_style("visual.indent.cursor.style", "cursor")
+        self.add("visual.cursor.surround.right", Kind.STR, ">",
+                self.SINGLE_CHAR)
+        self.add_style("visual.cursor.surround.style", "cursor")
+
+        # cursor.indent
+        self.add("visual.cursor.indent.char", Kind.STR, "┃", self.SINGLE_CHAR)
+        self.add("visual.cursor.indent.corner", Kind.STR, "┗",
+                self.SINGLE_CHAR)
+        self.add("visual.cursor.indent.fill", Kind.STR, "━", self.SINGLE_CHAR)
+        self.add_style("visual.cursor.indent.style", "cursor")
 
         # scroll
         self.add("visual.scroll.scrolloff", Kind.INT, 3, self.AT_LEAST_0)
