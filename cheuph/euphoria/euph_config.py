@@ -120,11 +120,51 @@ class EuphConfig(TransparentConfig):
     def indent_cursor_style(self) -> str:
         return self["visual.indent.cursor.style"]
 
-    # other
+    # scroll
 
     @property
     def scrolloff(self) -> int:
-        return self["visual.scrolloff"]
+        return self["visual.scroll.scrolloff"]
+
+    @property
+    def vertical_scroll(self) -> int:
+        return self["visual.scroll.vertical"]
+
+    @property
+    def horizontal_scroll(self) -> int:
+        return self["visual.scroll.horizontal"]
+
+    @property
+    def half_page_scroll(self) -> bool:
+        return self["visual.scroll.half_page"]
+
+    # borders
+
+    @property
+    def room_name_separator(self) -> str:
+        return self["visual.borders.room_name_separator"]
+
+    @property
+    def room_name_split(self) -> str:
+        return self["visual.borders.room_name_split"]
+
+    @property
+    def nick_list_separator(self) -> str:
+        return self["visual.borders.nick_list_separator"]
+
+    @property
+    def nick_list_split(self) -> str:
+        return self["visual.borders.nick_list_split"]
+
+    @property
+    def edit_separator(self) -> str:
+        return self["visual.borders.edit_separator"]
+
+    @property
+    def borders_style(self) -> str:
+        return self["visual.borders.style"]
+
+    # other
 
     @property
     def palette(self) -> Any:
@@ -176,8 +216,10 @@ class EuphLoader(TreeLoader):
         self.add_style("visual.surround.style", "bold")
 
         # cursor
-        self.add("visual.cursor.surround.left", Kind.STR, "<", self.SINGLE_CHAR)
-        self.add("visual.cursor.surround.right", Kind.STR, ">", self.SINGLE_CHAR)
+        self.add("visual.cursor.surround.left", Kind.STR, "<",
+                self.SINGLE_CHAR)
+        self.add("visual.cursor.surround.right", Kind.STR, ">",
+                self.SINGLE_CHAR)
         self.add_style("visual.cursor.surround.style", "cursor")
         self.add_style("visual.cursor.own_nick_style", "cursor")
         self.add("visual.cursor.fill.char", Kind.STR, " ", self.SINGLE_CHAR)
@@ -189,13 +231,31 @@ class EuphLoader(TreeLoader):
         self.add("visual.indent.fill", Kind.STR, " ", self.SINGLE_CHAR)
         self.add_style("visual.indent.style", "gray")
         self.add("visual.indent.cursor.char", Kind.STR, "┃", self.SINGLE_CHAR)
-        self.add("visual.indent.cursor.corner", Kind.STR, "┗", self.SINGLE_CHAR)
+        self.add("visual.indent.cursor.corner", Kind.STR, "┗",
+                self.SINGLE_CHAR)
         self.add("visual.indent.cursor.fill", Kind.STR, "━", self.SINGLE_CHAR)
         self.add_style("visual.indent.cursor.style", "cursor")
 
-        # other
-        self.add("visual.scrolloff", Kind.INT, 3, self.AT_LEAST_0)
+        # scroll
+        self.add("visual.scroll.scrolloff", Kind.INT, 3, self.AT_LEAST_0)
+        self.add("visual.scroll.vertical", Kind.INT, 2, self.AT_LEAST_1)
+        self.add("visual.scroll.horizontal", Kind.INT, 8, self.AT_LEAST_1)
+        self.add("visual.scroll.half_page", Kind.BOOL, True)
 
+        # borders
+        self.add("visual.borders.room_name_separator", Kind.STR, "═",
+                self.SINGLE_CHAR)
+        self.add("visual.borders.room_name_split", Kind.STR, "╤",
+                self.SINGLE_CHAR)
+        self.add("visual.borders.nick_list_separator", Kind.STR, "│",
+                self.SINGLE_CHAR)
+        self.add("visual.borders.nick_list_split", Kind.STR, "┤",
+                self.SINGLE_CHAR)
+        self.add("visual.borders.edit_separator", Kind.STR, "─",
+                self.SINGLE_CHAR)
+        self.add_style("visual.borders.style", "gray")
+
+        # other
         self.add("styles", Kind.DICT, self.DEFAULT_STYLES)
 
     def add_style(self, name: str, default: str) -> None:

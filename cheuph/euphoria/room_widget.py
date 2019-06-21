@@ -287,7 +287,11 @@ class RoomWidget(urwid.WidgetWrap):
         )
 
     def _create_tree_widget(self) -> Any:
-        return CursorTreeWidget(self._tree)
+        return CursorTreeWidget(self._tree,
+                vertical_scroll_step=self.c.vertical_scroll,
+                horizontal_scroll_step=self.c.vertical_scroll,
+                half_page_scroll=self.c.half_page_scroll,
+        )
 
     def _create_edit_widget(self) -> Any:
         return urwid.Edit(multiline=True)
@@ -301,10 +305,17 @@ class RoomWidget(urwid.WidgetWrap):
             tree: Any,
             edit: Any,
             ) -> Any:
-        return RoomLayout(room_name, nick_list, tree, edit)
+        return RoomLayout(room_name, nick_list, tree, edit,
+                border_attrs={"style": self.c.borders_style},
+                room_name_separator=self.c.room_name_separator,
+                room_name_split=self.c.room_name_split,
+                nick_list_separator=self.c.nick_list_separator,
+                nick_list_split=self.c.nick_list_split,
+                edit_separator=self.c.edit_separator,
+        )
 
     def _create_edit_nick_widget(self) -> Any:
-        return EditWidget("Choose a nick: ", "@")
+        return EditWidget("Choose a nick: ", "@", style=self.c.own_nick_style)
 
     ## Room life cycle
 
