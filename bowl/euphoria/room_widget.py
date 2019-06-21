@@ -440,9 +440,10 @@ class RoomWidget(urwid.WidgetWrap):
     def render(self, size: Tuple[int, int], focus: bool) -> None:
         canvas = super().render(size, focus)
 
-        if self._tree.hit_top and not self._requesting_logs:
-            self._requesting_logs = True
-            self.request_logs()
+        if not self._hit_top_of_supply:
+            if self._tree.hit_top and not self._requesting_logs:
+                self._requesting_logs = True
+                self.request_logs()
 
         return canvas
 

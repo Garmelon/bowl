@@ -3,6 +3,7 @@
 ## Next version
 
 - Add nick list
+- Fix fetching old logs
 - Rename project from "cheuph" to "bowl"
 - Clean up code
 
