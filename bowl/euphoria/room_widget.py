@@ -1,8 +1,8 @@
 import asyncio
+from enum import Enum
 from typing import Any, Awaitable, Callable, List, Optional, Tuple, TypeVar
 
 import urwid
-
 import yaboli
 
 from ..attributed_text_widget import ATWidget
@@ -14,6 +14,7 @@ from ..markup import AT, AttributedText, Attributes
 from .edit_widgets import EditWidget
 from .euph_config import EuphConfig
 from .euph_renderer import EuphRenderer
+from .nick_list_widget import NickListWidget
 
 __all__ = ["RoomWidget"]
 
@@ -129,22 +130,32 @@ class RoomLayout(urwid.WidgetWrap):
         string = self._edit_separator * tree_width
         return AT(string, attributes=self._border_attrs)
 
-    def set_edit_visible(self, visible: bool):
+    def set_edit_visible(self, visible: bool) -> None:
         if visible:
             self._left_wrap._w = self._edit_pile
         else:
             self._left_wrap._w = self._tree
 
-    def focus_on_edit(self):
+    def focus_on_edit(self) -> None:
         self._edit_pile.focus_position = 2
         self._columns.focus_position = 0
 
-    def focus_on_tree(self):
+    def focus_on_tree(self) -> None:
         self._edit_pile.focus_position = 0
         self._columns.focus_position = 0
 
-    def focus_on_user_list(self):
+    def focus_on_nick_list(self) -> None:
         self._columns.focus_position = 2
+
+class UiMode(Enum):
+
+    CONNECTING = "connecting"
+    CONNECTION_FAILED = "connection failed"
+    SETTING_PASSWORD = "setting password"
+    AUTHENTICATING = "authenticating"
+    SETTING_NICK = "setting nick"
+    VIEWING = "viewing"
+    EDITING = "editing"
 
 class RoomWidget(urwid.WidgetWrap):
     """
@@ -159,11 +170,6 @@ class RoomWidget(urwid.WidgetWrap):
        event
     """
 
-    CONNECTING = "connecting"
-    CONNECTION_FAILED = "connection_failed"
-    VIEWING = "viewing"
-    EDITING = "editing"
-
     def __init__(self,
             roomname: str,
             config: EuphConfig,
@@ -172,17 +178,24 @@ class RoomWidget(urwid.WidgetWrap):
 
         self.c = config
 
-        if log_amount < 1:
-            raise ValueError() # TODO add better text
         self._log_amount = log_amount
+        if self._log_amount < 1:
+            raise ValueError("log request amount must be at least 1")
 
-        self._mode: str
+        self._mode: UiMode
         self._requesting_logs = False
         self._hit_top_of_supply = False
 
         self._room = yaboli.Room(roomname)
+
+        self._room.register_event("connected", self.on_connected)
         self._room.register_event("snapshot", self.on_snapshot)
         self._room.register_event("send", self.on_send)
+        self._room.register_event("join", self.on_join)
+        self._room.register_event("part", self.on_part)
+        self._room.register_event("nick", self.on_nick)
+        self._room.register_event("edit", self.on_edit)
+        self._room.register_event("disconnect", self.on_disconnect)
 
         self._supply = InMemorySupply[Message]()
         self._renderer = self._create_euph_renderer()
@@ -297,7 +310,12 @@ class RoomWidget(urwid.WidgetWrap):
         return urwid.Edit(multiline=True)
 
     def _create_nick_list_widget(self) -> Any:
-        return urwid.SolidFill("n")
+        return NickListWidget(
+                heading_attrs={"style": self.c.nick_list_heading_style},
+                counter_attrs={"style": self.c.nick_list_counter_style},
+                nick_attrs={"style": self.c.nick_style},
+                own_nick_attrs={"style": self.c.own_nick_style},
+        )
 
     def _create_room_layout_widget(self,
             room_name: Any,
@@ -336,50 +354,42 @@ class RoomWidget(urwid.WidgetWrap):
 
     ## UI mode and mode switching
 
-    CONNECTING = "connecting"
-    CONNECTION_FAILED = "connection_failed"
-    SETTING_PASSWORD = "setting_password"
-    AUTHENTICATING = "authenticating"
-    SETTING_NICK = "setting_nick"
-    VIEWING = "viewing"
-    EDITING = "editing"
-
     def switch_connecting(self) -> None:
         self._w = self._connecting
-        self._mode = self.CONNECTING
+        self._mode = UiMode.CONNECTING
 
     def switch_connection_failed(self) -> None:
         self._w = self._connection_failed
-        self._mode = self.CONNECTION_FAILED
+        self._mode = UiMode.CONNECTION_FAILED
 
     def switch_setting_password(self) -> None:
         self._w = self._overlay
         self._overlay.set_top(self._edit_password)
-        self._mode = self.SETTING_PASSWORD
+        self._mode = UiMode.SETTING_PASSWORD
 
     def switch_authenticating(self) -> None:
         self._w = self._overlay
         self._overlay.set_top(self._authenticating)
-        self._mode = self.AUTHENTICATING
+        self._mode = UiMode.AUTHENTICATING
 
     def switch_setting_nick(self) -> None:
         self._w = self._overlay
         self._box.original_widget = self._edit_nick
         self._edit_nick.text = self._room.session.nick
         self.update_edit_nick()
-        self._mode = self.SETTING_NICK
+        self._mode = UiMode.SETTING_NICK
 
     def switch_view(self) -> None:
         self._w = self._layout
         self._layout.set_edit_visible(False)
         self._layout.focus_on_tree()
-        self._mode = self.VIEWING
+        self._mode = UiMode.VIEWING
 
     def switch_edit(self) -> None:
         self._w = self._layout
         self._layout.set_edit_visible(True)
         self._layout.focus_on_edit()
-        self._mode = self.EDITING
+        self._mode = UiMode.EDITING
 
     # Updating various parts of the UI
 
@@ -388,12 +398,15 @@ class RoomWidget(urwid.WidgetWrap):
 
     def update_nick_list(self) -> None:
         # Ensure that self._room.session and self._room.users exist
-        if self._mode not in {self.SETTING_NICK, self.VIEWING, self.EDITING}:
+        allowed = {UiMode.SETTING_NICK, UiMode.VIEWING, UiMode.EDITING}
+        if self._mode not in allowed:
             return
 
-        #self._nick_list.update(self._room.session, self._room.users)
+        # Automatically rerenders
+        self._nick_list.session = self._room.session
+        self._nick_list.users = self._room.users
 
-    def update_edit_nick(self):
+    def update_edit_nick(self) -> None:
         width = self._edit_nick.width
         self._overlay.set_overlay_parameters(
                 align=urwid.CENTER,
@@ -403,15 +416,15 @@ class RoomWidget(urwid.WidgetWrap):
         )
         self._overlay._invalidate()
 
-    # Reacting to changes
-
-    def own_nick_change(self):
+    def change_own_nick(self) -> None:
         self._renderer.nick = self._room.session.nick
         self._tree.invalidate_all()
         self.update_tree()
+
+        self._nick_list.session = self._room.session
         self.update_nick_list()
 
-    def receive_message(self, msg: yaboli.Message):
+    def receive_message(self, msg: yaboli.Message) -> None:
         self._supply.add(Message(
             msg.message_id,
             msg.parent_id,
@@ -434,7 +447,7 @@ class RoomWidget(urwid.WidgetWrap):
         return canvas
 
     def keypress(self, size: Tuple[int, int], key: str) -> Optional[str]:
-        if self._mode == self.VIEWING:
+        if self._mode == UiMode.VIEWING:
             if key in {"enter", "meta enter"} and not self._room.session.nick:
                 self.switch_setting_nick()
             elif key == "enter":
@@ -452,7 +465,7 @@ class RoomWidget(urwid.WidgetWrap):
             else:
                 return super().keypress(size, key)
 
-        elif self._mode == self.EDITING:
+        elif self._mode == UiMode.EDITING:
             if key == "enter":
                 if self._edit.edit_text:
                     self.send(self._edit.edit_text, self._tree.cursor_id)
@@ -464,7 +477,7 @@ class RoomWidget(urwid.WidgetWrap):
             else:
                 return super().keypress(size, key)
 
-        elif self._mode == self.SETTING_NICK:
+        elif self._mode == UiMode.SETTING_NICK:
             if key == "enter":
                 if self._edit_nick.text:
                     self.nick(self._edit_nick.text)
@@ -485,37 +498,62 @@ class RoomWidget(urwid.WidgetWrap):
 
     # Reacting to euph events
 
-    async def on_snapshot(self, messages: List[yaboli.Message]):
+    async def on_connected(self) -> None:
+        pass
+
+    async def on_snapshot(self, messages: List[yaboli.LiveMessage]) -> None:
         for message in messages:
             self.receive_message(message)
-        self.update_tree()
 
-    async def on_send(self, message: yaboli.Message):
+        self.update_nick_list()
+
+    async def on_send(self, message: yaboli.LiveMessage) -> None:
         self.receive_message(message)
-        self.update_tree()
+
+    async def on_join(self, user: yaboli.LiveSession) -> None:
+        self.update_nick_list()
+
+    async def on_part(self, user: yaboli.LiveSession) -> None:
+        self.update_nick_list()
+
+    async def on_nick(self,
+            user: yaboli.LiveSession,
+            from_: str,
+            to: str,
+            ) -> None:
+
+        self.update_nick_list()
+
+    async def on_edit(self, message: yaboli.LiveMessage) -> None:
+        self.receive_message(message)
+
+    async def on_disconnect(self, reason: str) -> None:
+        pass
 
     # Euph actions
 
     @synchronous
-    async def request_logs(self):
+    async def request_logs(self) -> None:
         oldest_id = self._supply.oldest_id()
         if oldest_id is not None:
             messages = await self._room.log(self._log_amount, oldest_id)
+
+            if len(messages) == 0:
+                self._hit_top_of_supply = True
+
             for message in messages:
                 self.receive_message(message)
-            self.update_tree()
 
         self._requesting_logs = False
 
     @synchronous
-    async def nick(self, nick: str):
-        new_nick = await self._room.nick(nick)
-        self.own_nick_change()
+    async def nick(self, nick: str) -> None:
+        await self._room.nick(nick)
+        self.change_own_nick()
 
     @synchronous
-    async def send(self, content: str, parent_id: Optional[str]):
+    async def send(self, content: str, parent_id: Optional[str]) -> None:
         message = await self._room.send(content, parent_id=parent_id)
         self.receive_message(message)
-        self.update_tree()
 
 urwid.register_signal(RoomWidget, ["close"])
