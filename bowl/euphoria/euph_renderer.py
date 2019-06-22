@@ -123,7 +123,7 @@ class EuphRenderer(CursorRenderer):
         right = AT(self._surround_right, attributes=self._surround_attrs)
 
         nick_str = left + nick + right + AT(" ")
-        nick_spaces = AT(" " * len(nick))
+        nick_spaces = AT(" " * len(nick_str))
 
         content = self._filter_unicode(message.content)
         lines = []

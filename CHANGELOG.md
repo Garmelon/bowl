@@ -2,7 +2,7 @@
 
 ## Next version
 
-Nothing yet
+- Fix indentation of multi-line messages
 
 ## 1.0.0 (2019-06-21)
 
