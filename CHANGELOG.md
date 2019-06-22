@@ -3,6 +3,7 @@
 ## Next version
 
 - Fix indentation of multi-line messages
+- Stop using dataclass (for backwards compatibility with Python 3.6)
 
 ## 1.0.0 (2019-06-21)
 

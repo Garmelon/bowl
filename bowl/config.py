@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -62,12 +61,17 @@ class Kind(Enum):
 
 Condition = Callable[[Any], bool]
 
-@dataclass
 class Option:
 
-    kind: Kind
-    default: Any
-    conditions: Iterable[Tuple[Condition, str]] = field(default_factory=list)
+    def __init__(self,
+            kind: Kind,
+            default: Any,
+            conditions: Iterable[Tuple[Condition, str]] = frozenset(),
+            ) -> None:
+
+        self.kind = kind
+        self.default = default
+        self.conditions = conditions
 
     def check_valid(self, value: Any) -> None:
         if not self.kind.matches(value):
