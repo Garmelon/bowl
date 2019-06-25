@@ -2,6 +2,8 @@
 
 A TUI client for [euphoria.io](https://euphoria.io)
 
+![bowl in action](demo.gif)
+
 ## Installation
 
 Ensure that you have at least Python 3.7 installed.

@@ -2,6 +2,7 @@
 
 ## Next version
 
+- Add demo gif to readme
 - Fix indentation of multi-line messages
 - Stop using dataclass (for backwards compatibility with Python 3.6)
 
