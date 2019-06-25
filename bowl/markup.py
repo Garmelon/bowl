@@ -1,99 +1,30 @@
 from typing import Any, Iterable, List, Mapping, Optional, Tuple, Union
+from dataclasses import dataclass
 
-__all__ = ["Attributes", "Chunk", "AttributedText", "AT"]
+__all__ = ["Attributes", "AttributedText", "AT"]
 
 Attributes = Mapping[str, Any]
 
-class Chunk:
+@dataclass
+class Char:
 
-    @staticmethod
-    def join_chunks(chunks: List["Chunk"]) -> List["Chunk"]:
-        if not chunks:
-            return []
+    char: str
+    attrs: Attributes
 
-        new_chunks: List[Chunk] = []
+    def set(self, name: str, value: Any) -> "Char":
+        new_attrs = dict(self.attrs)
+        new_attrs[name] = value
+        return Char(self.char, new_attrs)
 
-        current_chunk = chunks[0]
-        for chunk in chunks[1:]:
-            if not chunk.text:
-                continue
-
-            joined_chunk = current_chunk._join(chunk)
-
-            if joined_chunk is None:
-                new_chunks.append(current_chunk)
-                current_chunk = chunk
-            else:
-                current_chunk = joined_chunk
-
-        new_chunks.append(current_chunk)
-
-        return new_chunks
-
-    # Common special methods
-
-    def __init__(self, text: str, attributes: Attributes = {}) -> None:
-        self._text = text
-        self._attributes = dict(attributes)
-
-    def __str__(self) -> str:
-        return self.text
-
-    def __repr__(self) -> str:
-        return f"Chunk({self.text!r}, {self._attributes!r})"
-
-    # Uncommon special methods
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Chunk):
-            return NotImplemented
-
-        return (self._text == other._text and
-                self._attributes == other._attributes)
-
-    def __getitem__(self, key: Union[int, slice]) -> "Chunk":
-        return Chunk(self.text[key], self._attributes)
-
-    def __len__(self) -> int:
-        return len(self.text)
-
-    # Properties
-
-    @property
-    def text(self) -> str:
-        return self._text
-
-    @property
-    def attributes(self) -> Attributes:
-        return dict(self._attributes)
-
-    # Private methods
-
-    def _join(self, chunk: "Chunk") -> Optional["Chunk"]:
-        if self._attributes == chunk._attributes:
-            return Chunk(self.text + chunk.text, self._attributes)
-
-        return None
-
-    # Public methods
-
-    def get(self, name: str, default: Any = None) -> Any:
-        return self.attributes.get(name, default)
-
-    def set(self, name: str, value: Any) -> "Chunk":
-        new_attributes = dict(self._attributes)
-        new_attributes[name] = value
-        return Chunk(self.text, new_attributes)
-
-    def remove(self, name: str) -> "Chunk":
-        new_attributes = dict(self._attributes)
+    def remove(self, name: str) -> "Char":
+        new_attrs = dict(self.attrs)
 
         # This removes the value with that key, if it exists, and does nothing
         # if it doesn't exist. (Since we give a default value, no KeyError is
         # raised if the key isn't found.)
-        new_attributes.pop(name, None)
+        new_attrs.pop(name, None)
 
-        return Chunk(self.text, new_attributes)
+        return Char(self.char, new_attrs)
 
 class AttributedText:
     """
@@ -102,9 +33,9 @@ class AttributedText:
     """
 
     @classmethod
-    def from_chunks(cls, chunks: Iterable[Chunk]) -> "AttributedText":
+    def from_chars(cls, chars: Iterable[Char]) -> "AttributedText":
         new = cls()
-        new._chunks = Chunk.join_chunks(list(chunks))
+        new._chars = list(chars)
         return new
 
     # Common special methods
@@ -128,117 +59,60 @@ class AttributedText:
         attributes = dict(attributes)
         attributes.update(kwargs)
 
-        self._chunks: List[Chunk] = []
-        if text is not None:
-            self._chunks.append(Chunk(text, attributes=attributes))
+        self._chars: List[Char] = []
+        for char in text or "":
+            self._chars.append(Char(char, attributes))
 
     def __str__(self) -> str:
         return self.text
 
     def __repr__(self) -> str:
-        return f"AttributedText.from_chunks({self._chunks!r})"
+        return "N/A"
 
     # Uncommon special methods
 
     def __add__(self, other: "AttributedText") -> "AttributedText":
-        return AttributedText.from_chunks(self._chunks + other._chunks)
+        return AttributedText.from_chars(self._chars + other._chars)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, AttributedText):
                 return NotImplemented
 
-        return self._chunks == other._chunks
+        return self._chars == other._chars
 
     def __getitem__(self, key: Union[int, slice]) -> "AttributedText":
-        chunks: List[Chunk]
+        chars: List[Char]
 
         if isinstance(key, slice):
-            chunks = Chunk.join_chunks(self._slice(key))
+            chars = self._chars[key]
         else:
-            chunks = [self._at(key)]
+            chars = [self._chars[key]]
 
-        return AttributedText.from_chunks(chunks)
+        return AttributedText.from_chars(chars)
 
     def __len__(self) -> int:
-        return sum(map(len, self._chunks))
+        return len(self._chars)
 
     def __mul__(self, other: int) -> "AttributedText":
         if not isinstance(other, int):
             return NotImplemented
 
-        return self.from_chunks(self.chunks * other)
+        return self.from_chars(self._chars * other)
 
     # Properties
 
     @property
     def text(self) -> str:
-        return "".join(chunk.text for chunk in self._chunks)
+        return "".join(char.char for char in self._chars)
 
     @property
-    def chunks(self) -> List[Chunk]:
-        return list(self._chunks)
-
-    # Private methods
-
-    def _at(self, key: int) -> Chunk:
-        if key < 0:
-            key = len(self) + key
-
-        pos = 0
-        for chunk in self._chunks:
-            chunk_key = key - pos
-
-            if 0 <= chunk_key < len(chunk):
-                return chunk[chunk_key]
-
-            pos += len(chunk)
-
-        # We haven't found the chunk
-        raise KeyError
-
-    def _slice(self, key: slice) -> List[Chunk]:
-        start, stop, step = key.start, key.stop, key.step
-
-        if start is None:
-            start = 0
-        elif start < 0:
-            start = len(self) + start
-
-        if stop is None:
-            stop = len(self)
-        elif stop < 0:
-            stop = len(self) + stop
-
-        pos = 0 # cursor position
-        resulting_chunks = []
-
-        for chunk in self._chunks:
-            chunk_start = start - pos
-            chunk_stop = stop - pos
-
-            offset: Optional[int] = None
-            if step is not None:
-                offset = (start - pos) % step
-
-            if chunk_stop <= 0 or chunk_start >= len(chunk):
-                pass
-            elif chunk_start < 0 and chunk_stop > len(chunk):
-                resulting_chunks.append(chunk[offset::step])
-            elif chunk_start < 0:
-                resulting_chunks.append(chunk[offset:chunk_stop:step])
-            elif chunk_stop > len(chunk):
-                resulting_chunks.append(chunk[chunk_start::step])
-            else:
-                resulting_chunks.append(chunk[chunk_start:chunk_stop:step])
-
-            pos += len(chunk)
-
-        return resulting_chunks
+    def chars(self) -> List[Char]:
+        return list(self._chars)
 
     # Public methods
 
     def at(self, pos: int) -> Attributes:
-        return self._at(pos).attributes
+        return self._chars[pos].attrs
 
     def get(self,
             pos: int,
@@ -246,7 +120,7 @@ class AttributedText:
             default: Any = None,
             ) -> Any:
 
-        return self._at(pos).get(name, default)
+        return self.at(pos).get(name, default)
 
     def split_by(self,
             attribute_name: str,
@@ -254,26 +128,26 @@ class AttributedText:
 
         blocks = []
 
-        chunks: List[Chunk] = []
+        chars: List[Char] = []
         attribute: Any = None
 
-        for chunk in self._chunks:
-            chunk_attr = chunk.attributes.get(attribute_name)
+        for char in self._chars:
+            char_attr = char.attrs.get(attribute_name)
 
-            if chunks:
-                if attribute == chunk_attr:
-                    chunks.append(chunk)
+            if chars:
+                if attribute == char_attr:
+                    chars.append(char)
                 else:
-                    blocks.append((self.from_chunks(chunks), attribute))
+                    blocks.append((self.from_chars(chars), attribute))
 
-                    chunks = [chunk]
-                    attribute = chunk_attr
+                    chars = [char]
+                    attribute = char_attr
             else:
-                chunks.append(chunk)
-                attribute = chunk_attr
+                chars.append(char)
+                attribute = char_attr
 
-        if chunks:
-            blocks.append((self.from_chunks(chunks), attribute))
+        if chars:
+            blocks.append((self.from_chars(chars), attribute))
 
         return blocks
 
@@ -287,11 +161,11 @@ class AttributedText:
             interspersed.append(self)
             interspersed.append(segment)
 
-        chunks = []
+        chars = []
         for segment in interspersed:
-            chunks.extend(segment.chunks)
+            chars.extend(segment.chars)
 
-        return self.from_chunks(chunks)
+        return self.from_chars(chars)
 
     def set(self,
             name: str,
@@ -301,8 +175,8 @@ class AttributedText:
             ) -> "AttributedText":
 
         if start is None and stop is None:
-            chunks = (chunk.set(name, value) for chunk in self._chunks)
-            return AttributedText.from_chunks(chunks)
+            chars = (char.set(name, value) for char in self._chars)
+            return AttributedText.from_chars(chars)
         elif start is None:
             return self[:stop].set(name, value) + self[stop:]
         elif stop is None:
@@ -324,8 +198,8 @@ class AttributedText:
             ) -> "AttributedText":
 
         if start is None and stop is None:
-            chunks = (chunk.remove(name) for chunk in self._chunks)
-            return AttributedText.from_chunks(chunks)
+            chars = (char.remove(name) for char in self._chars)
+            return AttributedText.from_chars(chars)
         elif start is None:
             return self[:stop].remove(name) + self[stop:]
         elif stop is None:
