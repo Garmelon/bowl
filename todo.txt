@@ -1,0 +1,37 @@
+- config
+	x colors
+	- key bindings
+- documentation (especially of the config)
+
+- profiling/optimisation
+
+- detail mode
+- fold threads
+- nick list
+- better key bindings/controls
+- center cursor on screen (after scrolling the view without scrolling the cursor)
+- mouse support
+- searching for messages
+- better message editing when the screen is full
+- detect when the dimensions are too small (meta width etc.) and display warning
+- green "unread message" markers
+- highlight things in messages
+	- offline log browsing
+	- @mentions
+	- &rooms
+	- https://links
+	- :emojis:
+	- /me s
+- word wrapping for messages
+- multi-room support
+- db backend
+	- download room log
+	- auto repair gaps in log
+
+x robust starting script
+x install via pip from github
+  x runnable script
+x parse command-line parameters
+x nick list
+x room_widget refactor
+x save cookies
